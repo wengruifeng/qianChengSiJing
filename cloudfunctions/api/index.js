@@ -154,6 +154,91 @@ async function getHomeContent() {
   return ok(res.data[0] || {});
 }
 
+async function listCartItems(payload) {
+  const { userId } = payload;
+  if (!userId) return fail('缺少用户 ID', 'USER_ID_REQUIRED');
+  const cartRes = await db.collection('carts').where({ userId }).get();
+  const cartItems = cartRes.data;
+  const result = [];
+  for (const item of cartItems) {
+    const productRes = await db.collection('products').where({ id: item.productId }).limit(1).get();
+    const product = productRes.data[0] || null;
+    if (product) result.push({ ...item, product });
+  }
+  return ok(result);
+}
+
+async function addToCart(payload) {
+  const { productId, quantity = 1 } = payload;
+  if (!productId) return fail('缺少商品 ID', 'PRODUCT_ID_REQUIRED');
+  const wxContext = cloud.getWXContext();
+  const userRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
+  const user = userRes.data[0] || null;
+  if (!user) return fail('未找到当前登录用户', 'CURRENT_USER_NOT_FOUND');
+  const productRes = await db.collection('products').where({ id: productId, deleteStatus: 'normal', saleStatus: 'on' }).limit(1).get();
+  const product = productRes.data[0] || null;
+  if (!product) return fail('商品不存在', 'PRODUCT_NOT_FOUND');
+
+  const cartRes = await db.collection('carts').where({ userId: user.id, productId }).limit(1).get();
+  const existing = cartRes.data[0] || null;
+  const nextQuantity = Number(quantity) || 0;
+  const currentQuantity = existing ? Number(existing.quantity || 0) : 0;
+  const availableStock = Math.max(0, Number(product.stock || 0) - Number(product.lockedStock || 0));
+  if (availableStock <= 0) return fail('商品已售罄', 'PRODUCT_SOLD_OUT');
+  if (currentQuantity + nextQuantity > availableStock) return fail('库存不足', 'INSUFFICIENT_STOCK');
+
+  if (existing) {
+    await db.collection('carts').doc(existing._id).update({
+      data: {
+        quantity: currentQuantity + nextQuantity,
+        checked: true
+      }
+    });
+  } else {
+    await db.collection('carts').add({
+      data: {
+        id: nextId('cart'),
+        userId: user.id,
+        productId,
+        quantity: nextQuantity,
+        checked: true
+      }
+    });
+  }
+  return ok({ ok: true });
+}
+
+async function updateCartQuantity(payload) {
+  const { cartId, quantity } = payload;
+  if (!cartId) return fail('缺少购物车 ID', 'CART_ID_REQUIRED');
+  const wxContext = cloud.getWXContext();
+  const userRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
+  const user = userRes.data[0] || null;
+  if (!user) return fail('未找到当前登录用户', 'CURRENT_USER_NOT_FOUND');
+  const cartRes = await db.collection('carts').where({ id: cartId, userId: user.id }).limit(1).get();
+  const cartItem = cartRes.data[0] || null;
+  if (!cartItem) return fail('购物车项不存在', 'CART_ITEM_NOT_FOUND');
+  const nextQuantity = Number(quantity);
+  if (!Number.isFinite(nextQuantity) || nextQuantity < 0) return fail('数量不合法', 'INVALID_QUANTITY');
+  if (nextQuantity === 0) {
+    await db.collection('carts').doc(cartItem._id).remove();
+    return ok({ ok: true, removed: true });
+  }
+  const productRes = await db.collection('products').where({ id: cartItem.productId }).limit(1).get();
+  const product = productRes.data[0] || null;
+  if (!product) return fail('商品不存在', 'PRODUCT_NOT_FOUND');
+  const availableStock = Math.max(0, Number(product.stock || 0) - Number(product.lockedStock || 0));
+  if (nextQuantity > availableStock) {
+    return fail('库存不足', 'INSUFFICIENT_STOCK');
+  }
+  await db.collection('carts').doc(cartItem._id).update({
+    data: {
+      quantity: nextQuantity
+    }
+  });
+  return ok({ ok: true, quantity: nextQuantity });
+}
+
 async function submitApply(payload) {
   const { company, region, addressDetail } = payload;
   if (!company || !region || !addressDetail) {
@@ -401,6 +486,16 @@ async function createOrder(payload) {
     });
   }
 
+  const cartIds = items.map((item) => item.cartId).filter(Boolean);
+  if (cartIds.length) {
+    const cartRes = await db.collection('carts').where({ userId: user.id }).get();
+    for (const cartItem of cartRes.data) {
+      if (cartIds.includes(cartItem.id)) {
+        await db.collection('carts').doc(cartItem._id).remove();
+      }
+    }
+  }
+
   await db.collection('operation_logs').add({
     data: {
       id: nextId('op'),
@@ -573,6 +668,18 @@ exports.main = async (event) => {
 
   if (action === 'getHomeContent') {
     return getHomeContent(payload);
+  }
+
+  if (action === 'listCartItems') {
+    return listCartItems(payload);
+  }
+
+  if (action === 'addToCart') {
+    return addToCart(payload);
+  }
+
+  if (action === 'updateCartQuantity') {
+    return updateCartQuantity(payload);
   }
 
   if (action === 'submitApply') {

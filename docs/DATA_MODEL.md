@@ -14,6 +14,7 @@
 - `categories`
 - `orders`
 - `order_items`
+- `carts`
 - `addresses`
 - `audit_logs`
 - `home_contents`
@@ -156,6 +157,24 @@
 
 - 这里保存的是下单时商品快照，避免商品后续改名、改价、删除后影响历史订单
 
+## carts
+
+购物车/选购暂存表。
+
+- `id`
+- `userId`
+- `productId`
+- `quantity`
+- `checked`
+- `createdAt`
+- `updatedAt`
+
+说明：
+
+- 当前购物车已改为 cloud-first
+- 购物车仍属于“提交订单前”的暂存数据，不算正式订单
+- 提交订单成功后，会清除对应的已勾选购物车项
+
 ## audit_logs
 
 审核记录表。
@@ -231,6 +250,7 @@
 - `orders.orderNo`
 - `orders.status + settlementStatus + createdAt`
 - `order_items.orderId`
+- `carts.userId + productId`
 - `addresses.userId + isDefault`
 - `audit_logs.status + submittedAt`
 

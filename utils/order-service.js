@@ -2,7 +2,8 @@ const { callCloud, canUseCloud } = require('./cloud');
 const { runtime } = require('./config');
 const { getStore, updateStore, nextId, nowText, clone } = require('./store');
 const { getCurrentUser } = require('./auth');
-const { getCartItems, getAvailableStock } = require('./business');
+const { getAvailableStock } = require('./business');
+const { fetchCartItems } = require('./cart-service');
 
 const statusMap = {
   pending: '待确认',
@@ -49,10 +50,9 @@ function decorateOrder(order, items) {
   };
 }
 
-function createOrderMock({ address, remark }) {
+function createOrderMock({ address, remark, items }) {
   const user = getCurrentUser();
   if (!user) throw new Error('请先登录');
-  const items = getCartItems().filter((item) => item.checked);
   if (!items.length) throw new Error('请先选择商品');
   if (!address) throw new Error('请选择收货地址');
   const insufficient = items.find((item) => getAvailableStock(item.product) < item.quantity);
@@ -116,24 +116,27 @@ function createOrderMock({ address, remark }) {
 }
 
 function submitOrder({ address, remark }) {
-  const items = getCartItems().filter((item) => item.checked).map((item) => ({
-    cartId: item.id,
-    productId: item.product.id,
-    quantity: item.quantity
-  }));
-  return cloudFirst('createOrder', {
-    addressId: address && address.id,
-    address,
-    remark,
-    items
-  }, () => createOrderMock({ address, remark })).then((order) => {
-    const user = getCurrentUser();
-    if (user) {
-      updateStore((store) => {
-        store.cart = store.cart.filter((cart) => !(cart.userId === user.id && cart.checked));
-      });
-    }
-    return decorateOrder(order, order.items);
+  return fetchCartItems().then((cartItems) => {
+    const checkedItems = cartItems.filter((item) => item.checked);
+    const payloadItems = checkedItems.map((item) => ({
+      cartId: item.id,
+      productId: item.product.id,
+      quantity: item.quantity
+    }));
+    return cloudFirst('createOrder', {
+      addressId: address && address.id,
+      address,
+      remark,
+      items: payloadItems
+    }, () => createOrderMock({ address, remark, items: checkedItems })).then((order) => {
+      const user = getCurrentUser();
+      if (user) {
+        updateStore((store) => {
+          store.cart = store.cart.filter((cart) => !(cart.userId === user.id && cart.checked));
+        });
+      }
+      return decorateOrder(order, order.items);
+    });
   });
 }
 

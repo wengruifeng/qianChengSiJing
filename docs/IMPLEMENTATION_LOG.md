@@ -234,3 +234,23 @@
   - `pages/admin/products/products.js`
   - `pages/admin/home-content/home-content.js`
   - `pages/admin/reconcile/reconcile.js`
+
+### 购物车链路补充
+
+- 扩展 `cloudfunctions/api`：
+  - 新增 `listCartItems`
+  - 新增 `addToCart`
+  - 新增 `updateCartQuantity`
+- 扩展 `cloudfunctions/bootstrap` 与 `seed.js`：
+  - 新增 `carts` 集合与演示种子数据
+- 新增 `utils/cart-service.js`：
+  - 统一封装加购、查看选购、数量修改的 cloud-first 访问
+  - 云失败时按配置回退本地 mock
+- 切换为 cloud-first 的页面：
+  - `pages/catalog/catalog.js`
+  - `pages/product/product.js`
+  - `pages/cart/cart.js`
+  - `pages/checkout/checkout.js`
+- 修正 `utils/order-service.js`：
+  - 提交订单时从云购物车读取当前勾选项
+  - 提交成功后同步清理云购物车和本地兜底购物车

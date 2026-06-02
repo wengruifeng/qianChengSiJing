@@ -1,5 +1,5 @@
 const { getCurrentUser, canSeePrice } = require('../../utils/auth');
-const { getCartItems, updateCartQuantity } = require('../../utils/business');
+const { fetchCartItems, updateCartQuantity } = require('../../utils/cart-service');
 const { fetchAddressesByCurrentUser } = require('../../utils/customer-service');
 const { submitOrder } = require('../../utils/order-service');
 
@@ -22,18 +22,17 @@ Page({
       setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) }), 300);
       return;
     }
-    const items = getCartItems().filter((item) => item.checked).map((item) => ({
-      ...item,
-      subtotalText: (item.product.price * item.quantity).toFixed(2)
-    }));
-    fetchAddressesByCurrentUser().then((addresses) => {
+    Promise.all([fetchCartItems(), fetchAddressesByCurrentUser()]).then(([cartItems, addresses]) => {
+      const items = cartItems.filter((item) => item.checked).map((item) => ({
+        ...item,
+        subtotalText: (item.product.price * item.quantity).toFixed(2)
+      }));
       const addressId = wx.getStorageSync('zht_checkout_address_id');
       const address = addresses.find((item) => item.id === addressId) || addresses.find((item) => item.isDefault) || null;
       const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
       this.setData({ items, address, total: total.toFixed(2) });
     }).catch(() => {
-      const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-      this.setData({ items, address: null, total: total.toFixed(2) });
+      this.setData({ items: [], address: null, total: '0.00' });
     });
   },
 
@@ -50,19 +49,26 @@ Page({
     const item = this.data.items.find((current) => current.id === id);
     if (!item) return;
     const nextQuantity = Math.max(0, item.quantity - 1);
-    updateCartQuantity(id, nextQuantity);
-    this.loadPageData();
+    updateCartQuantity(id, nextQuantity).then(() => {
+      this.loadPageData();
+    });
   },
 
   increaseQty(event) {
     const id = event.currentTarget.dataset.id;
     const item = this.data.items.find((current) => current.id === id);
     if (!item) return;
-    const result = updateCartQuantity(id, item.quantity + 1);
-    if (!result.ok) {
-      wx.showToast({ title: result.message, icon: 'none' });
-    }
-    this.loadPageData();
+    updateCartQuantity(id, item.quantity + 1).then((result) => {
+      if (!result.ok) {
+        wx.showToast({ title: result.message, icon: 'none' });
+      }
+      this.loadPageData();
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '修改数量失败',
+        icon: 'none'
+      });
+    });
   },
 
   onQtyBlur(event) {
@@ -74,11 +80,17 @@ Page({
       this.loadPageData();
       return;
     }
-    const result = updateCartQuantity(id, nextQuantity);
-    if (!result.ok) {
-      wx.showToast({ title: result.maxQuantity > 0 ? `库存不足，最多 ${result.maxQuantity}` : result.message, icon: 'none' });
-    }
-    this.loadPageData();
+    updateCartQuantity(id, nextQuantity).then((result) => {
+      if (!result.ok) {
+        wx.showToast({ title: result.maxQuantity > 0 ? `库存不足，最多 ${result.maxQuantity}` : result.message, icon: 'none' });
+      }
+      this.loadPageData();
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '修改数量失败',
+        icon: 'none'
+      });
+    });
   },
 
   submit() {

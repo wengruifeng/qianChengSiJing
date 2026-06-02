@@ -1,4 +1,4 @@
-const { addToCart } = require('../../utils/business');
+const { addToCart } = require('../../utils/cart-service');
 const { canSeePrice, requireLogin } = require('../../utils/auth');
 const { fetchProductById } = require('../../utils/catalog-service');
 
@@ -41,8 +41,14 @@ Page({
       wx.showToast({ title: '商品已售罄', icon: 'none' });
       return;
     }
-    const result = addToCart(this.data.product.id, 1);
-    wx.showToast({ title: result.ok ? '已加入选购' : result.message, icon: result.ok ? 'success' : 'none' });
+    addToCart(this.data.product.id, 1).then((result) => {
+      wx.showToast({ title: result.ok ? '已加入选购' : result.message, icon: result.ok ? 'success' : 'none' });
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '加入选购失败',
+        icon: 'none'
+      });
+    });
   },
 
   goCart() {

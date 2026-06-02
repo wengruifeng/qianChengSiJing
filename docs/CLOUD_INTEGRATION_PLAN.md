@@ -244,7 +244,7 @@
 
 任务：
 
-- [ ] 查看选购数据上云或至少转为实时业务数据
+- [x] 查看选购数据上云或至少转为实时业务数据
 - [x] 提交订单写入 `orders` / `order_items`
 - [x] 前台订单列表、订单详情读取真实数据
 - [x] 后台订单管理读取真实数据
@@ -265,6 +265,10 @@
 当前进度：
 
 - 已扩展云函数接口：
+  - `listCartItems`
+  - `addToCart`
+  - `updateCartQuantity`
+- 已扩展云函数接口：
   - `createOrder`
   - `listUserOrders`
   - `getOrderDetail`
@@ -273,11 +277,15 @@
   - `updateOrderStatus`
 - 已新增 `utils/order-service.js`
 - 已切换页面：
+  - 商品列表加购
+  - 商品详情加购
+  - 选购页加购与汇总
+  - 查看选购页数量修改
   - 查看选购页（提交订单）
   - 前台订单列表
   - 前台订单详情
   - 后台订单管理
-- 当前购物车仍保留本地模式，作为下一步是否上云的独立决策点
+- 当前购物车已切为 cloud-first，失败时回退本地 mock
 
 ---
 

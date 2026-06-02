@@ -1,6 +1,7 @@
 const { getStore } = require('../../utils/store');
 const { getCurrentUser, canSeePrice } = require('../../utils/auth');
-const { addToCart, getCartItems, getAvailableStock } = require('../../utils/business');
+const { getAvailableStock } = require('../../utils/business');
+const { addToCart, fetchCartItems } = require('../../utils/cart-service');
 
 function enrichProduct(item) {
   const availableStock = getAvailableStock(item);
@@ -62,10 +63,13 @@ Page({
       this.setData({ cartCount: 0, total: '0.00' });
       return;
     }
-    const items = getCartItems();
-    const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
-    const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-    this.setData({ cartCount, total: total.toFixed(2) });
+    fetchCartItems().then((items) => {
+      const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
+      const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+      this.setData({ cartCount, total: total.toFixed(2) });
+    }).catch(() => {
+      this.setData({ cartCount: 0, total: '0.00' });
+    });
   },
 
   onKeyword(event) {
@@ -94,9 +98,15 @@ Page({
       wx.navigateTo({ url: '/pages/apply/apply' });
       return;
     }
-    const result = addToCart(event.currentTarget.dataset.id, 1);
-    wx.showToast({ title: result.ok ? '已加入选购' : result.message, icon: result.ok ? 'success' : 'none' });
-    this.refreshCartSummary();
+    addToCart(event.currentTarget.dataset.id, 1).then((result) => {
+      wx.showToast({ title: result.ok ? '已加入选购' : result.message, icon: result.ok ? 'success' : 'none' });
+      this.refreshCartSummary();
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '加入选购失败',
+        icon: 'none'
+      });
+    });
   },
 
   goApply() {

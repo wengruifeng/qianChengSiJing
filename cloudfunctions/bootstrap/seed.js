@@ -180,6 +180,11 @@ const home_contents = [
   }
 ];
 
+const carts = [
+  { id: 'cart_001', userId: 'user_customer', productId: 'p_2', quantity: 2, checked: true },
+  { id: 'cart_002', userId: 'user_customer', productId: 'p_3', quantity: 1, checked: true }
+];
+
 const addresses = [
   {
     id: 'addr_1',
@@ -349,6 +354,7 @@ const COLLECTION_SEED_MAP = {
   products,
   orders,
   order_items,
+  carts,
   addresses,
   audit_logs,
   home_contents,

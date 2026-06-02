@@ -13,6 +13,7 @@ const COLLECTIONS = [
   'categories',
   'orders',
   'order_items',
+  'carts',
   'addresses',
   'audit_logs',
   'home_contents',

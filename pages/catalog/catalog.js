@@ -1,5 +1,5 @@
 const { canSeePrice, requireLogin } = require('../../utils/auth');
-const { addToCart } = require('../../utils/business');
+const { addToCart } = require('../../utils/cart-service');
 const { fetchCategories, fetchVisibleProducts } = require('../../utils/catalog-service');
 
 Page({
@@ -67,8 +67,14 @@ Page({
       wx.navigateTo({ url: '/pages/apply/apply' });
       return;
     }
-    const result = addToCart(event.currentTarget.dataset.id, 1);
-    wx.showToast({ title: result.ok ? '已加入选购' : result.message, icon: result.ok ? 'success' : 'none' });
+    addToCart(event.currentTarget.dataset.id, 1).then((result) => {
+      wx.showToast({ title: result.ok ? '已加入选购' : result.message, icon: result.ok ? 'success' : 'none' });
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '加入选购失败',
+        icon: 'none'
+      });
+    });
   },
 
   goApply() {
