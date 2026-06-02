@@ -1,4 +1,4 @@
-const { getCurrentUser, isAdmin } = require('../../utils/auth');
+const { getCurrentUser, isAdmin, refreshCurrentUser } = require('../../utils/auth');
 
 Page({
   data: {
@@ -8,7 +8,13 @@ Page({
   },
 
   onShow() {
-    const user = getCurrentUser();
+    this.renderUser(getCurrentUser());
+    refreshCurrentUser().then((user) => {
+      this.renderUser(user);
+    });
+  },
+
+  renderUser(user) {
     const map = {
       not_applied: '未申请',
       pending: '待审核',

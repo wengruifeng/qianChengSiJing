@@ -146,3 +146,17 @@
   - `home_contents`
   - `message_settings`
   - `operation_logs`
+
+### 阶段 3 进展
+
+- 扩展 `cloudfunctions/api`：
+  - 新增 `authLoginByPhone`
+  - 新增 `authGetCurrentUser`
+  - 登录时支持根据 `admins` 自动识别管理员角色
+- 重写 `utils/auth.js`：
+  - 当前用户缓存从“仅本地 store 查找”升级为“云端优先 + 本地缓存兜底”
+  - 登录成功后会同步缓存当前用户 `id`、`phone` 和用户对象
+  - 云端失败时，如开启兜底则自动回落到本地 mock 登录
+- 更新 `pages/login/login.js` 为异步登录流程
+- 更新 `pages/me/me.js`，进入页面时自动刷新当前用户资料
+- 更新 `app.js`，小程序启动时自动尝试刷新当前用户缓存

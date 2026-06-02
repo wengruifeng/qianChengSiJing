@@ -1,6 +1,7 @@
 const { seedStore } = require('./utils/store');
 const { runtime } = require('./utils/config');
 const { initCloud } = require('./utils/cloud');
+const { refreshCurrentUser } = require('./utils/auth');
 
 App({
   globalData: {
@@ -17,5 +18,8 @@ App({
     const cloudState = initCloud();
     this.globalData.cloudReady = cloudState.ready;
     this.globalData.cloudState = cloudState;
+    refreshCurrentUser().then((user) => {
+      this.globalData.currentUser = user || null;
+    });
   }
 });
