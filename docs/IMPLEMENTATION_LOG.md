@@ -128,4 +128,21 @@
 ### 当前阶段
 
 - 已完成：Git 基线、正式环境参数落地、云初始化底座、统一云调用入口
-- 下一步：集合初始化与登录/角色/权限真实化
+- 下一步：登录/角色/权限真实化
+
+### 阶段 2 补充
+
+- 扩展 `cloudfunctions/bootstrap`，新增：
+  - `order_items` 集合初始化
+  - demo 种子数据能力
+  - 空集合判定后写入基础演示数据
+- 新增 `cloudfunctions/bootstrap/seed.js`，内置最小可演示的管理员、客户、分类、商品、首页内容、地址、订单、订单商品、审核和操作记录数据。
+- 重写 `docs/DATA_MODEL.md`，补齐：
+  - `admins`
+  - `categories`
+  - `addresses`
+  - `orders`
+  - `order_items`
+  - `home_contents`
+  - `message_settings`
+  - `operation_logs`

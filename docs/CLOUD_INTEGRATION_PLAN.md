@@ -79,17 +79,17 @@
 
 优先集合：
 
-- [ ] `users`
-- [ ] `admins`
-- [ ] `products`
-- [ ] `categories`
-- [ ] `orders`
-- [ ] `order_items`
-- [ ] `addresses`
-- [ ] `audit_logs`
-- [ ] `home_contents`
-- [ ] `operation_logs`
-- [ ] `message_settings`
+- [x] `users`
+- [x] `admins`
+- [x] `products`
+- [x] `categories`
+- [x] `orders`
+- [x] `order_items`
+- [x] `addresses`
+- [x] `audit_logs`
+- [x] `home_contents`
+- [x] `operation_logs`
+- [x] `message_settings`
 
 关键枚举：
 
@@ -103,11 +103,19 @@
 - 集合命名方案
 - 字段结构落地方案
 - 初始化脚本/初始化云函数方案
+- demo 种子数据方案
 
 验收标准：
 
 - 云数据库集合可见
 - 能够插入、读取一条基础记录
+
+当前进度：
+
+- 已扩展 `cloudfunctions/bootstrap`，支持：
+  - 创建集合
+  - 按 `seedDemo: true` 自动写入 demo 演示数据
+- 已补齐 `docs/DATA_MODEL.md`
 
 ---
 

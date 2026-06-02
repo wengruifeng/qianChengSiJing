@@ -29,13 +29,19 @@
 - `admins`：管理员手机号与角色。
 - `products`：商品资料。
 - `categories`：一级分类。
-- `orders`：订单与订单商品快照。
+- `orders`：订单主表。
+- `order_items`：订单商品快照明细。
 - `addresses`：收货地址。
 - `audit_logs`：审核记录。
 - `home_contents`：首页内容配置。
 - `message_settings`：消息推送设置。
 - `operation_logs`：操作记录。
 - 对账中心依赖 `orders.settlementStatus` 字段管理待结算 / 已结算。
+
+当前 `cloudfunctions/bootstrap` 已支持：
+
+- 创建以上集合
+- 在调用时传入 `seedDemo: true`，将基础演示数据写入空集合
 
 ## 后补资料
 
