@@ -254,3 +254,15 @@
 - 修正 `utils/order-service.js`：
   - 提交订单时从云购物车读取当前勾选项
   - 提交成功后同步清理云购物车和本地兜底购物车
+
+### 收口文档补充
+
+- 新增 [CLOUD_SETUP_GUIDE.md](D:/codex/中货通小程序需求/docs/CLOUD_SETUP_GUIDE.md)
+  - 说明云函数上传
+  - 说明 `bootstrap` 初始化集合与 demo 数据
+  - 说明建议联调顺序
+- 新增 [BLOCKERS_AND_NEXT_STEPS.md](D:/codex/中货通小程序需求/docs/BLOCKERS_AND_NEXT_STEPS.md)
+  - 汇总当前阻塞项
+  - 给出下一步推进建议
+- 更新 `README.md` 与 `DELIVERY_CHECKLIST.md`
+  - 将项目阶段从“接云中”推进到“已可联调，进入收口阶段”

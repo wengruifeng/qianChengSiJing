@@ -17,7 +17,12 @@
 - `AppID`: `wx3079736104fac8e3`
 - 云开发环境 ID：`a01-d4ggnjhhqfabf9ba2`
 
-详见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) 与 [docs/CLOUD_INTEGRATION_PLAN.md](docs/CLOUD_INTEGRATION_PLAN.md)。
+详见：
+
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
+- [docs/CLOUD_INTEGRATION_PLAN.md](docs/CLOUD_INTEGRATION_PLAN.md)
+- [docs/CLOUD_SETUP_GUIDE.md](docs/CLOUD_SETUP_GUIDE.md)
+- [docs/BLOCKERS_AND_NEXT_STEPS.md](docs/BLOCKERS_AND_NEXT_STEPS.md)
 
 ## 图片说明
 
