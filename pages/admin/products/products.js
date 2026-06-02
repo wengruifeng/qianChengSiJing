@@ -1,5 +1,6 @@
 const { getStore } = require('../../../utils/store');
 const { createAudit } = require('../../../utils/business');
+const { fetchAdminProducts, fetchCategories } = require('../../../utils/catalog-service');
 
 Page({
   data: {
@@ -20,27 +21,26 @@ Page({
   },
 
   refresh() {
-    const keyword = this.data.keyword.toLowerCase();
-    const categoryMap = Object.fromEntries(getStore().categories.map((item) => [item.id, item.name]));
-    const products = getStore().products.filter((item) => {
-      if (item.deleteStatus === 'deleted') return false;
-      const text = `${item.name}${item.barcode}${item.code}`.toLowerCase();
-      const availableStock = item.stock - item.lockedStock;
-      const warning = availableStock <= item.warningStock;
-      const statusMatched = this.data.status === 'all'
-        || (this.data.status === 'warning' ? warning : item.saleStatus === this.data.status);
-      return statusMatched && (!keyword || text.includes(keyword));
-    }).map((item) => {
-      const availableStock = item.stock - item.lockedStock;
-      return {
+    Promise.all([fetchCategories(), fetchAdminProducts()]).then(([categories, allProducts]) => {
+      const keyword = this.data.keyword.toLowerCase();
+      const categoryMap = Object.fromEntries(categories.map((item) => [item.id, item.name]));
+      const products = allProducts.filter((item) => {
+        if (item.deleteStatus === 'deleted') return false;
+        const text = `${item.name}${item.barcode}${item.code}`.toLowerCase();
+        const warning = item.availableStock <= item.warningStock;
+        const statusMatched = this.data.status === 'all'
+          || (this.data.status === 'warning' ? warning : item.saleStatus === this.data.status);
+        return statusMatched && (!keyword || text.includes(keyword));
+      }).map((item) => ({
         ...item,
-        availableStock,
-        warning: availableStock <= item.warningStock,
+        warning: item.availableStock <= item.warningStock,
         categoryName: categoryMap[item.categoryId] || '未分类',
         saleStatusText: item.saleStatus === 'on' ? '在售' : '下架'
-      };
+      }));
+      this.setData({ products });
+    }).catch(() => {
+      this.setData({ products: [] });
     });
-    this.setData({ products });
   },
 
   onKeyword(event) {

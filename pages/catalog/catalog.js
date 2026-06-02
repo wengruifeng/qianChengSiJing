@@ -1,16 +1,6 @@
-const { getStore } = require('../../utils/store');
 const { canSeePrice, requireLogin } = require('../../utils/auth');
-const { addToCart, getAvailableStock } = require('../../utils/business');
-
-function enrichProduct(item) {
-  const availableStock = getAvailableStock(item);
-  return {
-    ...item,
-    availableStock,
-    isSoldOut: availableStock <= 0,
-    isLowStock: availableStock > 0 && availableStock <= (item.warningStock || 0)
-  };
-}
+const { addToCart } = require('../../utils/business');
+const { fetchCategories, fetchVisibleProducts } = require('../../utils/catalog-service');
 
 Page({
   data: {
@@ -28,17 +18,25 @@ Page({
   },
 
   onShow() {
-    const store = getStore();
-    const categories = store.categories.filter((item) => item.status === 'enabled').sort((a, b) => a.sort - b.sort);
-    this.setData({
-      categories,
-      products: store.products
-        .filter((item) => item.saleStatus === 'on' && item.deleteStatus !== 'deleted')
-        .map(enrichProduct),
-      activeCategoryId: this.data.activeCategoryId || this.initialCategoryId || (categories[0] && categories[0].id) || '',
-      keyword: this.data.keyword || decodeURIComponent(this.initialKeyword || ''),
-      canSeePrice: canSeePrice()
-    }, this.filterProducts);
+    Promise.all([
+      fetchCategories(),
+      fetchVisibleProducts()
+    ]).then(([categories, products]) => {
+      this.setData({
+        categories,
+        products,
+        activeCategoryId: this.data.activeCategoryId || this.initialCategoryId || (categories[0] && categories[0].id) || '',
+        keyword: this.data.keyword || decodeURIComponent(this.initialKeyword || ''),
+        canSeePrice: canSeePrice()
+      }, this.filterProducts);
+    }).catch(() => {
+      this.setData({
+        categories: [],
+        products: [],
+        filteredProducts: [],
+        canSeePrice: canSeePrice()
+      });
+    });
   },
 
   filterProducts() {

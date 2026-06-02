@@ -1,5 +1,5 @@
 const { getCurrentUser, requireLogin } = require('../../utils/auth');
-const { updateStore, nowText, nextId } = require('../../utils/store');
+const { submitApply } = require('../../utils/customer-service');
 
 Page({
   data: {
@@ -40,25 +40,19 @@ Page({
       wx.showToast({ title: '请填写完整资料', icon: 'none' });
       return;
     }
-    updateStore((store) => {
-      const user = store.users.find((item) => item.id === this.data.user.id);
-      user.company = this.data.company;
-      user.region = this.data.region;
-      user.addressDetail = this.data.addressDetail;
-      user.customerStatus = 'pending';
-      user.appliedAt = nowText();
-      store.operationLogs.unshift({
-        id: nextId('op'),
-        operatorId: user.id,
-        operatorName: user.nickName,
-        type: 'apply_price',
-        target: user.phone,
-        summary: `${user.company} 提交查看价格申请`,
-        createdAt: nowText()
+    submitApply({
+      company: this.data.company,
+      region: this.data.region,
+      addressDetail: this.data.addressDetail
+    }).then(() => {
+      wx.showToast({ title: '已提交申请' });
+      setTimeout(() => wx.switchTab({ url: '/pages/me/me' }), 500);
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '提交失败，请稍后再试',
+        icon: 'none'
       });
     });
-    wx.showToast({ title: '已提交申请' });
-    setTimeout(() => wx.switchTab({ url: '/pages/me/me' }), 500);
   },
 
   saveDefaultAddress() {

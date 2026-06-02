@@ -162,12 +162,13 @@
 
 任务：
 
-- [ ] 首页读取真实 `home_contents`
-- [ ] 分类列表读取真实 `categories`
-- [ ] 商品列表读取真实 `products`
-- [ ] 商品详情读取真实 `products`
-- [ ] 后台商品管理读取真实 `products`
-- [ ] 后台首页内容管理读取/提交真实 `home_contents`
+- [x] 首页读取真实 `home_contents`
+- [x] 分类列表读取真实 `categories`
+- [x] 商品列表读取真实 `products`
+- [x] 商品详情读取真实 `products`
+- [x] 后台商品管理读取真实 `products`
+- [x] 后台首页内容管理读取真实 `home_contents`
+- [ ] 后台首页内容管理提交审核写入真实 `audit_logs`
 
 输出：
 
@@ -178,6 +179,22 @@
 - 修改商品数据后前台可见
 - 修改首页内容后前台可见
 
+当前进度：
+
+- 已扩展云函数接口：
+  - `listCategories`
+  - `listProducts`
+  - `listAdminProducts`
+  - `getProduct`
+  - `getHomeContent`
+- 已新增 `utils/catalog-service.js` 作为商品与首页的 cloud-first 服务层
+- 已切换页面：
+  - 首页
+  - 分类/选购页
+  - 商品详情页
+  - 后台商品管理
+  - 后台首页内容管理（读取）
+
 ---
 
 ### 阶段 5：客户与地址切云
@@ -186,11 +203,12 @@
 
 任务：
 
-- [ ] 客户查看价格申请上云
-- [ ] 客户状态变更上云
-- [ ] 地址新增/编辑/删除/默认地址上云
-- [ ] 后台客户管理读取真实 `users`
-- [ ] 后台客户详情读取真实客户档案、地址、订单摘要
+- [x] 客户查看价格申请上云
+- [x] 客户状态变更上云
+- [x] 地址新增上云
+- [ ] 地址编辑/删除/默认地址上云
+- [x] 后台客户管理读取真实 `users`
+- [x] 后台客户详情读取真实客户档案、地址、订单摘要
 
 输出：
 
@@ -201,6 +219,22 @@
 
 - 客户申请后后台可见
 - 后台审核后前台权限更新生效
+
+当前进度：
+
+- 已扩展云函数接口：
+  - `submitApply`
+  - `saveAddress`
+  - `listAddresses`
+  - `listCustomers`
+  - `reviewCustomer`
+  - `getCustomerDetail`
+- 已新增 `utils/customer-service.js`
+- 已切换页面：
+  - 查看价格申请页
+  - 地址管理页
+  - 后台客户管理
+  - 后台客户详情
 
 ---
 

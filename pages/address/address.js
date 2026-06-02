@@ -1,5 +1,5 @@
 const { getCurrentUser, requireLogin } = require('../../utils/auth');
-const { getStore, updateStore, nextId } = require('../../utils/store');
+const { saveAddress, fetchAddressesByCurrentUser } = require('../../utils/customer-service');
 
 Page({
   data: {
@@ -23,8 +23,11 @@ Page({
   },
 
   refresh() {
-    const user = getCurrentUser();
-    this.setData({ addresses: getStore().addresses.filter((item) => item.userId === user.id) });
+    fetchAddressesByCurrentUser().then((addresses) => {
+      this.setData({ addresses });
+    }).catch(() => {
+      this.setData({ addresses: [] });
+    });
   },
 
   onInput(event) {
@@ -32,19 +35,21 @@ Page({
   },
 
   save() {
-    const user = getCurrentUser();
     const form = this.data.form;
     if (!form.contactName || !form.phone || !form.region || !form.detail) {
       wx.showToast({ title: '请填写完整地址', icon: 'none' });
       return;
     }
-    updateStore((store) => {
-      const hasDefault = store.addresses.some((item) => item.userId === user.id && item.isDefault);
-      store.addresses.push({ id: nextId('addr'), userId: user.id, ...form, isDefault: !hasDefault });
+    saveAddress(form).then(() => {
+      this.setData({ form: { contactName: '', phone: '', region: '', detail: '' } });
+      this.refresh();
+      wx.showToast({ title: '已保存' });
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '保存失败，请稍后再试',
+        icon: 'none'
+      });
     });
-    this.setData({ form: { contactName: '', phone: '', region: '', detail: '' } });
-    this.refresh();
-    wx.showToast({ title: '已保存' });
   },
 
   choose(event) {

@@ -1,5 +1,6 @@
 const { getStore } = require('../../../utils/store');
 const { createAudit } = require('../../../utils/business');
+const { fetchHomeContent } = require('../../../utils/catalog-service');
 
 Page({
   data: {
@@ -7,7 +8,11 @@ Page({
   },
 
   onLoad() {
-    this.setData({ form: { ...getStore().homeContent } });
+    fetchHomeContent().then((homeContent) => {
+      this.setData({ form: { ...homeContent } });
+    }).catch(() => {
+      this.setData({ form: { ...getStore().homeContent } });
+    });
   },
 
   onInput(event) {

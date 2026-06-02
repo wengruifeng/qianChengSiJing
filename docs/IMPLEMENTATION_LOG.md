@@ -160,3 +160,41 @@
 - 更新 `pages/login/login.js` 为异步登录流程
 - 更新 `pages/me/me.js`，进入页面时自动刷新当前用户资料
 - 更新 `app.js`，小程序启动时自动尝试刷新当前用户缓存
+
+### 阶段 4 进展
+
+- 扩展 `cloudfunctions/api`：
+  - 新增 `listCategories`
+  - 新增 `listProducts`
+  - 新增 `listAdminProducts`
+  - 新增 `getProduct`
+  - 新增 `getHomeContent`
+- 新增 `utils/catalog-service.js`：
+  - 统一封装商品与首页内容的 cloud-first 读取
+  - 云失败时按配置回退本地 mock
+- 新增 `utils/content.js`：
+  - 抽离商品 enrich 和首页推荐/新品筛选逻辑
+- 切换为 cloud-first 的页面：
+  - `pages/index/index.js`
+  - `pages/catalog/catalog.js`
+  - `pages/product/product.js`
+  - `pages/admin/products/products.js`
+  - `pages/admin/home-content/home-content.js`
+
+### 阶段 5 进展
+
+- 扩展 `cloudfunctions/api`：
+  - 新增 `submitApply`
+  - 新增 `saveAddress`
+  - 新增 `listAddresses`
+  - 新增 `listCustomers`
+  - 新增 `reviewCustomer`
+  - 新增 `getCustomerDetail`
+- 新增 `utils/customer-service.js`：
+  - 统一封装客户申请、地址、客户列表、客户详情、客户审核的 cloud-first 访问
+  - 云失败时按配置回退本地 mock
+- 切换为 cloud-first 的页面：
+  - `pages/apply/apply.js`
+  - `pages/address/address.js`
+  - `pages/admin/customers/customers.js`
+  - `pages/admin/customer-detail/customer-detail.js`
