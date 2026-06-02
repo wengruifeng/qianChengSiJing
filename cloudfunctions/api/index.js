@@ -625,14 +625,113 @@ exports.main = async (event) => {
 
   if (action === 'createAudit') {
     const wxContext = cloud.getWXContext();
+    const userRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
+    const user = userRes.data[0] || null;
     const audit = {
-      ...payload,
-      openid: wxContext.OPENID,
+      id: nextId('audit'),
+      type: payload.type,
+      targetCollection: payload.targetCollection,
+      targetId: payload.targetId,
+      submitterId: user ? user.id : '',
+      submitterName: user ? user.nickName : '系统',
+      submittedAt: nowText(),
       status: 'pending',
-      submittedAt: db.serverDate()
+      reviewerId: '',
+      reviewerName: '',
+      reviewedAt: '',
+      beforeData: payload.beforeData || null,
+      afterData: payload.afterData || null,
+      summary: payload.summary || '',
+      rejectReason: ''
     };
-    const res = await db.collection('audit_logs').add({ data: audit });
-    return ok({ id: res._id });
+    await db.collection('audit_logs').add({ data: audit });
+    return ok(audit);
+  }
+
+  if (action === 'listAudits') {
+    const res = await db.collection('audit_logs').get();
+    return ok(res.data.sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt))));
+  }
+
+  if (action === 'reviewAudit') {
+    const { id, action: reviewAction, rejectReason } = payload;
+    if (!id || !reviewAction) return fail('缺少审核参数', 'AUDIT_PARAMS_REQUIRED');
+    const wxContext = cloud.getWXContext();
+    const reviewerRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
+    const reviewer = reviewerRes.data[0] || null;
+    if (!reviewer || reviewer.role !== 'super_admin') return fail('仅超级管理员可审核', 'AUDIT_PERMISSION_DENIED');
+    const auditRes = await db.collection('audit_logs').where({ id }).limit(1).get();
+    const audit = auditRes.data[0] || null;
+    if (!audit) return fail('审核记录不存在', 'AUDIT_NOT_FOUND');
+    if (audit.status !== 'pending') return fail('该审核已处理', 'AUDIT_ALREADY_REVIEWED');
+
+    if (reviewAction === 'approve') {
+      if (audit.targetCollection === 'products') {
+        if (audit.type === 'product_create') {
+          const productData = {
+            id: nextId('p'),
+            ...audit.afterData,
+            createdAt: nowText(),
+            updatedAt: nowText()
+          };
+          await db.collection('products').add({ data: productData });
+        } else {
+          const productRes = await db.collection('products').where({ id: audit.targetId }).limit(1).get();
+          const product = productRes.data[0] || null;
+          if (product) {
+            await db.collection('products').doc(product._id).update({
+              data: {
+                ...audit.afterData,
+                updatedAt: nowText()
+              }
+            });
+          }
+        }
+      }
+      if (audit.targetCollection === 'home_contents' || audit.targetCollection === 'homeContent') {
+        const homeRes = await db.collection('home_contents').where({ id: 'home_content' }).limit(1).get();
+        const home = homeRes.data[0] || null;
+        if (home) {
+          await db.collection('home_contents').doc(home._id).update({
+            data: {
+              ...audit.afterData,
+              updatedAt: nowText(),
+              updatedBy: reviewer.id
+            }
+          });
+        }
+      }
+    }
+
+    const patch = {
+      status: reviewAction === 'approve' ? 'approved' : 'rejected',
+      reviewerId: reviewer.id,
+      reviewerName: reviewer.nickName,
+      reviewedAt: nowText(),
+      rejectReason: reviewAction === 'reject' ? (rejectReason || '后台拒绝') : ''
+    };
+    await db.collection('audit_logs').doc(audit._id).update({ data: patch });
+    return ok({
+      ...audit,
+      ...patch
+    });
+  }
+
+  if (action === 'updateSettlementStatus') {
+    const { ids = [], status } = payload;
+    if (!Array.isArray(ids) || !ids.length || !status) return fail('缺少结算状态参数', 'SETTLEMENT_PARAMS_REQUIRED');
+    const ordersRes = await Promise.all(ids.map((id) => db.collection('orders').where({ id }).limit(1).get()));
+    for (const orderRes of ordersRes) {
+      const order = orderRes.data[0] || null;
+      if (!order) continue;
+      await db.collection('orders').doc(order._id).update({
+        data: {
+          settlementStatus: status,
+          updatedAt: nowText()
+        }
+      });
+    }
+    return ok({ ids, status });
   }
 
   return fail(`Unknown action: ${action}`, 'UNKNOWN_ACTION');

@@ -1,5 +1,5 @@
 const { getStore } = require('../../../utils/store');
-const { createAudit } = require('../../../utils/business');
+const { createAudit } = require('../../../utils/audit-service');
 const { fetchAdminProducts, fetchCategories } = require('../../../utils/catalog-service');
 
 Page({
@@ -62,7 +62,20 @@ Page({
 
   requestDelete(event) {
     const product = getStore().products.find((item) => item.id === event.currentTarget.dataset.id);
-    createAudit('product_delete', 'products', product.id, product, { ...product, deleteStatus: 'deleted' }, `删除商品：${product.name}`);
-    wx.showToast({ title: '已提交审核' });
+    createAudit({
+      type: 'product_delete',
+      targetCollection: 'products',
+      targetId: product.id,
+      beforeData: product,
+      afterData: { ...product, deleteStatus: 'deleted' },
+      summary: `删除商品：${product.name}`
+    }).then(() => {
+      wx.showToast({ title: '已提交审核' });
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '提交审核失败',
+        icon: 'none'
+      });
+    });
   }
 });

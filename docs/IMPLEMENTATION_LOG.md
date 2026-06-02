@@ -216,3 +216,21 @@
   - `pages/orders/orders.js`
   - `pages/order-detail/order-detail.js`
   - `pages/admin/orders/orders.js`
+
+### 阶段 7 进展
+
+- 扩展 `cloudfunctions/api`：
+  - 新增 `listAudits`
+  - 新增 `reviewAudit`
+  - 新增 `updateSettlementStatus`
+- 新增 `utils/audit-service.js`：
+  - 统一封装审核记录读取、审核通过、审核拒绝的 cloud-first 访问
+  - 云失败时按配置回退本地 mock
+- 增强 `utils/order-service.js`：
+  - 增加结算状态批量更新能力
+- 切换为 cloud-first 的页面：
+  - `pages/admin/audits/audits.js`
+  - `pages/admin/product-edit/product-edit.js`
+  - `pages/admin/products/products.js`
+  - `pages/admin/home-content/home-content.js`
+  - `pages/admin/reconcile/reconcile.js`

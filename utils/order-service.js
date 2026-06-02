@@ -214,6 +214,20 @@ function updateOrderStatus(id, nextStatus) {
   }).then((order) => order ? decorateOrder(order, order.items) : null);
 }
 
+function updateSettlementStatus(ids, status) {
+  return cloudFirst('updateSettlementStatus', { ids, status }, () => {
+    updateStore((store) => {
+      store.orders.forEach((order) => {
+        if (ids.includes(order.id)) {
+          order.settlementStatus = status;
+          order.updatedAt = nowText();
+        }
+      });
+    });
+    return { ids, status };
+  });
+}
+
 module.exports = {
   confirmReceive,
   decorateOrder,
@@ -223,5 +237,6 @@ module.exports = {
   settlementMap,
   statusMap,
   submitOrder,
-  updateOrderStatus
+  updateOrderStatus,
+  updateSettlementStatus
 };

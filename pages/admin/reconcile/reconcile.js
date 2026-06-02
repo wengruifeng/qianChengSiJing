@@ -1,5 +1,5 @@
-const { getStore, updateStore, nowText, nextId } = require('../../../utils/store');
-const { getCurrentUser } = require('../../../utils/auth');
+const { fetchCustomers } = require('../../../utils/customer-service');
+const { fetchAdminOrders, updateSettlementStatus } = require('../../../utils/order-service');
 
 const settlementOptions = [
   { label: '全部订单', value: 'all' },
@@ -105,15 +105,15 @@ Page({
   },
 
   buildCustomerOptions() {
-    const store = getStore();
-    const customers = store.users
-      .filter((item) => item.role === 'customer')
-      .map((item) => ({
-        label: item.company || item.nickName,
-        value: item.id
-      }));
-    this.setData({
-      customerOptions: [{ label: '全部客户', value: 'all' }].concat(customers)
+    fetchCustomers().then((customers) => {
+      this.setData({
+        customerOptions: [{ label: '全部客户', value: 'all' }].concat(customers.map((item) => ({
+          label: item.company || item.nickName,
+          value: item.id
+        })))
+      });
+    }).catch(() => {
+      this.setData({ customerOptions: [{ label: '全部客户', value: 'all' }] });
     });
   },
 
@@ -141,8 +141,7 @@ Page({
     this.setData({ orderKeyword: event.detail.value }, this.refresh);
   },
 
-  getFilteredOrders() {
-    const store = getStore();
+  getFilteredOrders(allOrders) {
     const customerValue = this.data.customerOptions[this.data.customerIndex].value;
     const settlementValue = this.data.settlementOptions[this.data.settlementIndex].value;
     const sortValue = this.data.sortOptions[this.data.sortIndex].value;
@@ -150,12 +149,12 @@ Page({
     const endDate = this.data.endDate;
     const orderKeyword = this.data.orderKeyword.trim().toLowerCase();
 
-    const orders = store.orders.filter((order) => {
+    const orders = allOrders.filter((order) => {
       const orderDate = parseOrderDate(order);
       const customerMatched = customerValue === 'all' || order.userId === customerValue;
       const settlementMatched = settlementValue === 'all' || (order.settlementStatus || 'pending') === settlementValue;
       const dateMatched = (!startDate || orderDate >= startDate) && (!endDate || orderDate <= endDate);
-      const orderMatched = !orderKeyword || order.orderNo.toLowerCase().includes(orderKeyword);
+      const orderMatched = !orderKeyword || String(order.orderNo || '').toLowerCase().includes(orderKeyword);
       return customerMatched && settlementMatched && dateMatched && orderMatched;
     }).map((order) => ({
       ...order,
@@ -163,9 +162,9 @@ Page({
       settlementText: (order.settlementStatus || 'pending') === 'settled' ? '已结算' : '待结算',
       settlementTitle: (order.settlementStatus || 'pending') === 'settled' ? '已结算订单' : '待结算订单',
       createdDate: parseOrderDate(order),
-      goodsText: order.items.map((item) => `${item.productName} × ${item.quantity}${item.unit || ''}`).join('；'),
+      goodsText: (order.items || []).map((item) => `${item.productName} × ${item.quantity}${item.unit || ''}`).join('；'),
       addressText: `${order.addressSnapshot.contactName} ${order.addressSnapshot.phone} ${order.addressSnapshot.region} ${order.addressSnapshot.detail}`,
-      totalQty: order.items.reduce((sum, item) => sum + item.quantity, 0)
+      totalQty: (order.items || []).reduce((sum, item) => sum + item.quantity, 0)
     }));
 
     orders.sort((a, b) => {
@@ -180,32 +179,48 @@ Page({
   },
 
   refresh() {
-    const baseOrders = this.getFilteredOrders();
-    const selectedSet = new Set(this.data.selectedOrderIds);
-    const validSelectedOrderIds = baseOrders
-      .filter((item) => selectedSet.has(item.id))
-      .map((item) => item.id);
-    const validSelectedSet = new Set(validSelectedOrderIds);
-    const previewOrders = baseOrders.map((item) => ({
-      ...item,
-      selected: validSelectedSet.has(item.id)
-    }));
-    const customerSet = new Set(previewOrders.map((item) => item.userId));
-    const itemCount = previewOrders.reduce((sum, order) => sum + order.totalQty, 0);
-    const amount = previewOrders.reduce((sum, order) => sum + order.amount, 0);
-    const selectedOrders = previewOrders.filter((item) => item.selected);
-    this.setData({
-      previewOrders,
-      selectedOrderIds: validSelectedOrderIds,
-      summary: {
-        orderCount: previewOrders.length,
-        customerCount: customerSet.size,
-        itemCount,
-        amount: amount.toFixed(2),
-        selectedOrderCount: selectedOrders.length,
-        selectedAmount: selectedOrders.reduce((sum, order) => sum + order.amount, 0).toFixed(2)
-      },
-      hasPendingInFiltered: previewOrders.some((item) => item.settlementStatus === 'pending')
+    fetchAdminOrders().then((allOrders) => {
+      const baseOrders = this.getFilteredOrders(allOrders);
+      const selectedSet = new Set(this.data.selectedOrderIds);
+      const validSelectedOrderIds = baseOrders
+        .filter((item) => selectedSet.has(item.id))
+        .map((item) => item.id);
+      const validSelectedSet = new Set(validSelectedOrderIds);
+      const previewOrders = baseOrders.map((item) => ({
+        ...item,
+        selected: validSelectedSet.has(item.id)
+      }));
+      const customerSet = new Set(previewOrders.map((item) => item.userId));
+      const itemCount = previewOrders.reduce((sum, order) => sum + order.totalQty, 0);
+      const amount = previewOrders.reduce((sum, order) => sum + order.amount, 0);
+      const selectedOrders = previewOrders.filter((item) => item.selected);
+      this.setData({
+        previewOrders,
+        selectedOrderIds: validSelectedOrderIds,
+        summary: {
+          orderCount: previewOrders.length,
+          customerCount: customerSet.size,
+          itemCount,
+          amount: amount.toFixed(2),
+          selectedOrderCount: selectedOrders.length,
+          selectedAmount: selectedOrders.reduce((sum, order) => sum + order.amount, 0).toFixed(2)
+        },
+        hasPendingInFiltered: previewOrders.some((item) => item.settlementStatus === 'pending')
+      });
+    }).catch(() => {
+      this.setData({
+        previewOrders: [],
+        selectedOrderIds: [],
+        summary: {
+          orderCount: 0,
+          customerCount: 0,
+          itemCount: 0,
+          amount: '0.00',
+          selectedOrderCount: 0,
+          selectedAmount: '0.00'
+        },
+        hasPendingInFiltered: false
+      });
     });
   },
 
@@ -241,25 +256,22 @@ Page({
   },
 
   markSettled(predicate, toastTitle) {
-    const currentUser = getCurrentUser();
-    updateStore((store) => {
-      store.orders.forEach((order) => {
-        if (predicate(order) && (order.settlementStatus || 'pending') !== 'settled') {
-          order.settlementStatus = 'settled';
-          store.operationLogs.unshift({
-            id: nextId('op'),
-            operatorId: currentUser ? currentUser.id : '',
-            operatorName: currentUser ? currentUser.nickName : '后台',
-            type: 'settlement_status',
-            target: order.orderNo,
-            summary: '订单标记为已结算',
-            createdAt: nowText()
-          });
-        }
+    const ids = this.data.previewOrders
+      .filter((order) => predicate(order) && (order.settlementStatus || 'pending') !== 'settled')
+      .map((order) => order.id);
+    if (!ids.length) {
+      wx.showToast({ title: '没有可标记的订单', icon: 'none' });
+      return;
+    }
+    updateSettlementStatus(ids, 'settled').then(() => {
+      wx.showToast({ title: toastTitle, icon: 'none' });
+      this.refresh();
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '结算状态更新失败',
+        icon: 'none'
       });
     });
-    wx.showToast({ title: toastTitle, icon: 'none' });
-    this.refresh();
   },
 
   exportStatement() {

@@ -1,5 +1,5 @@
 const { getStore } = require('../../../utils/store');
-const { createAudit } = require('../../../utils/business');
+const { createAudit } = require('../../../utils/audit-service');
 const { fetchHomeContent } = require('../../../utils/catalog-service');
 
 Page({
@@ -20,7 +20,20 @@ Page({
   },
 
   submit() {
-    createAudit('home_content_update', 'homeContent', 'home', getStore().homeContent, this.data.form, '修改首页内容');
-    wx.showToast({ title: '已提交审核' });
+    createAudit({
+      type: 'home_content_update',
+      targetCollection: 'home_contents',
+      targetId: 'home_content',
+      beforeData: getStore().homeContent,
+      afterData: this.data.form,
+      summary: '修改首页内容'
+    }).then(() => {
+      wx.showToast({ title: '已提交审核' });
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '提交审核失败',
+        icon: 'none'
+      });
+    });
   }
 });

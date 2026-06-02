@@ -1,5 +1,5 @@
 const { getStore } = require('../../../utils/store');
-const { createAudit } = require('../../../utils/business');
+const { createAudit } = require('../../../utils/audit-service');
 
 const emptyForm = {
   name: '',
@@ -61,8 +61,21 @@ Page({
       wx.showToast({ title: '请填写名称、价格、库存', icon: 'none' });
       return;
     }
-    createAudit(this.data.id ? 'product_update' : 'product_create', 'products', this.data.id, this.data.before, form, `${this.data.id ? '修改' : '新增'}商品：${form.name}`);
-    wx.showToast({ title: '已提交审核' });
-    setTimeout(() => wx.navigateBack(), 500);
+    createAudit({
+      type: this.data.id ? 'product_update' : 'product_create',
+      targetCollection: 'products',
+      targetId: this.data.id,
+      beforeData: this.data.before,
+      afterData: form,
+      summary: `${this.data.id ? '修改' : '新增'}商品：${form.name}`
+    }).then(() => {
+      wx.showToast({ title: '已提交审核' });
+      setTimeout(() => wx.navigateBack(), 500);
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '提交审核失败',
+        icon: 'none'
+      });
+    });
   }
 });
