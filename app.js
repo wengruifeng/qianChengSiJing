@@ -1,16 +1,21 @@
 const { seedStore } = require('./utils/store');
+const { runtime } = require('./utils/config');
+const { initCloud } = require('./utils/cloud');
 
 App({
   globalData: {
-    env: 'mock-first',
-    cloudReady: false
+    appName: runtime.appName,
+    appId: runtime.appId,
+    env: runtime.mode,
+    cloudEnvId: runtime.cloudEnvId,
+    cloudReady: false,
+    cloudFallbackToMock: runtime.fallbackToMock
   },
 
   onLaunch() {
     seedStore();
-    if (wx.cloud) {
-      wx.cloud.init({ traceUser: true });
-      this.globalData.cloudReady = true;
-    }
+    const cloudState = initCloud();
+    this.globalData.cloudReady = cloudState.ready;
+    this.globalData.cloudState = cloudState;
   }
 });

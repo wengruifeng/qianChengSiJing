@@ -107,3 +107,25 @@
 - 订阅消息模板 ID。
 - CSV/Excel 真正解析和文件生成。
 - 云数据库安全规则。
+
+## 2026-06-02
+
+### 已完成
+
+- 初始化 Git 仓库并提交当前样机基线快照，提交信息：`chore: snapshot current mini program prototype`。
+- 新增 [CLOUD_INTEGRATION_PLAN.md](CLOUD_INTEGRATION_PLAN.md)，明确云环境接入、集合初始化、登录权限、商品首页、客户订单、审核对账的分阶段执行顺序。
+- 已确认并记录正式环境信息：
+  - `AppID`: `wx3079736104fac8e3`
+  - 云开发环境 ID：`a01-d4ggnjhhqfabf9ba2`
+- 新增 `utils/config.js`，集中管理小程序名称、`AppID`、云环境 ID、运行模式。
+- 新增 `utils/cloud.js`，封装云初始化与统一云函数调用入口，为后续页面逐步切云做准备。
+- 更新 `app.js`：
+  - 使用正式云环境进行 `wx.cloud.init`
+  - 将运行模式、云环境 ID、云初始化状态写入 `globalData`
+  - 保留本地 mock 兜底能力
+- 更新 `README.md`、`docs/DEVELOPMENT.md`、`docs/DELIVERY_CHECKLIST.md`，同步当前已进入“云环境已就绪、业务分批切云”的阶段。
+
+### 当前阶段
+
+- 已完成：Git 基线、正式环境参数落地、云初始化底座、统一云调用入口
+- 下一步：集合初始化与登录/角色/权限真实化

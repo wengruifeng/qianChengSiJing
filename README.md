@@ -10,9 +10,14 @@
 
 ## 运行方式
 
-用微信开发者工具打开本目录即可。当前使用本地 mock 数据，可以先预览完整业务链路。
+用微信开发者工具打开本目录即可。当前以本地 mock 数据为主，同时已拿到正式云环境配置，后续将按计划分批切换真实云数据。
 
-详见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)。
+已确认环境：
+
+- `AppID`: `wx3079736104fac8e3`
+- 云开发环境 ID：`a01-d4ggnjhhqfabf9ba2`
+
+详见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) 与 [docs/CLOUD_INTEGRATION_PLAN.md](docs/CLOUD_INTEGRATION_PLAN.md)。
 
 ## 图片说明
 
@@ -20,7 +25,6 @@
 
 ## 仍需后补
 
-- 正式 AppID 与云开发环境 ID
 - 正式商品/首页素材
 - 旧商品与客户真实数据
 - 订阅消息模板 ID
