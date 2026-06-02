@@ -264,5 +264,8 @@
 - 新增 [BLOCKERS_AND_NEXT_STEPS.md](D:/codex/中货通小程序需求/docs/BLOCKERS_AND_NEXT_STEPS.md)
   - 汇总当前阻塞项
   - 给出下一步推进建议
+- 新增 [CLOUD_SECURITY_RULES.md](D:/codex/中货通小程序需求/docs/CLOUD_SECURITY_RULES.md)
+  - 明确推荐的数据库“默认全拒绝直连”策略
+  - 明确云函数角色与归属校验边界
 - 更新 `README.md` 与 `DELIVERY_CHECKLIST.md`
   - 将项目阶段从“接云中”推进到“已可联调，进入收口阶段”

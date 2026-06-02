@@ -193,6 +193,10 @@
 - 用户协议 / 隐私协议正文替换
 - 云数据库安全规则精细化
 
+数据库权限与云函数安全边界说明，详见：
+
+- [CLOUD_SECURITY_RULES.md](D:/codex/中货通小程序需求/docs/CLOUD_SECURITY_RULES.md)
+
 ## 联调建议
 
 建议每次改完后，按这个顺序快速回归：
