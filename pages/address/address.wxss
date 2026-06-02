@@ -1,0 +1,17 @@
+.addr {
+  padding: 24rpx;
+  margin-bottom: 18rpx;
+}
+
+.name {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.edit {
+  margin-top: 24rpx;
+}
+
+.btn-primary {
+  margin-top: 24rpx;
+}

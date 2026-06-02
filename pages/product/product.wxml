@@ -1,0 +1,26 @@
+<view class="product-page" wx:if="{{product}}">
+  <swiper class="swiper" indicator-dots="{{true}}">
+    <swiper-item wx:for="{{images}}" wx:key="*this">
+      <image src="{{item}}" mode="aspectFill"></image>
+    </swiper-item>
+  </swiper>
+  <view class="info card">
+    <view class="title">{{product.name}}</view>
+    <view class="tag">{{product.spec}}</view>
+    <view class="between price-row">
+      <view wx:if="{{canSeePrice}}" class="price">¥{{product.price}}/{{product.unit}}</view>
+      <view wx:else class="price-hidden">***/{{product.unit}}</view>
+      <view class="muted">库存 {{availableStock}}</view>
+    </view>
+    <view class="stock-tip sold-out" wx:if="{{isSoldOut}}">当前商品已售罄</view>
+    <view class="stock-tip low-stock" wx:elif="{{isLowStock}}">库存紧张，仅剩 {{availableStock}}{{product.unit}}</view>
+  </view>
+  <view class="desc card">
+    <view class="block-title">商品描述</view>
+    <view class="muted">{{product.description}}</view>
+  </view>
+  <view class="bottom" wx:if="{{canSeePrice}}">
+    <button class="btn-ghost" bindtap="goCart">选购</button>
+    <button class="btn-primary" bindtap="addCart" disabled="{{isSoldOut}}">{{isSoldOut ? '已售罄' : '加入选购'}}</button>
+  </view>
+</view>

@@ -1,0 +1,62 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/cart/cart",
+    "pages/orders/orders",
+    "pages/me/me",
+    "pages/catalog/catalog",
+    "pages/product/product",
+    "pages/checkout/checkout",
+    "pages/order-detail/order-detail",
+    "pages/login/login",
+    "pages/apply/apply",
+    "pages/address/address",
+    "pages/agreement/agreement",
+    "pages/message-settings/message-settings",
+    "pages/admin/dashboard/dashboard",
+    "pages/admin/products/products",
+    "pages/admin/product-edit/product-edit",
+    "pages/admin/orders/orders",
+    "pages/admin/reconcile/reconcile",
+    "pages/admin/customers/customers",
+    "pages/admin/customer-detail/customer-detail",
+    "pages/admin/audits/audits",
+    "pages/admin/stats/stats",
+    "pages/admin/home-content/home-content",
+    "pages/admin/settings/settings",
+    "pages/admin/admins/admins",
+    "pages/admin/import-export/import-export"
+  ],
+  "window": {
+    "navigationBarTitleText": "前呈似景供应链",
+    "navigationBarBackgroundColor": "#e8f5ff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f3f6fb"
+  },
+  "tabBar": {
+    "color": "#777777",
+    "selectedColor": "#1592f5",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/cart/cart",
+        "text": "选购"
+      },
+      {
+        "pagePath": "pages/orders/orders",
+        "text": "订单"
+      },
+      {
+        "pagePath": "pages/me/me",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}

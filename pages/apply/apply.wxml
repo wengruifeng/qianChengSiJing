@@ -1,0 +1,23 @@
+<view class="apply">
+  <view class="heading">
+    <view>前呈似景供应链</view>
+    <text>期待和您成为合作伙伴</text>
+  </view>
+  <view class="form-card">
+    <view class="form-row">
+      <view class="form-label">公司/店铺</view>
+      <input class="form-input" placeholder="请输入" value="{{company}}" bindinput="onCompany" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">所在地区</view>
+      <input class="form-input" placeholder="请选择地址" value="{{region}}" bindinput="onRegion" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">详细地址</view>
+      <input class="form-input" placeholder="请输入" value="{{addressDetail}}" bindinput="onDetail" />
+    </view>
+  </view>
+  <view class="status" wx:if="{{user && user.customerStatus !== 'not_applied'}}">当前状态：{{statusText}}</view>
+  <button wx:if="{{user && user.customerStatus === 'approved'}}" class="save-address" bindtap="saveDefaultAddress">保存为默认收货地址</button>
+  <button class="submit" bindtap="submit">提交申请</button>
+</view>

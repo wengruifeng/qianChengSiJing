@@ -1,0 +1,38 @@
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18rpx;
+}
+
+.stat {
+  padding: 24rpx;
+}
+
+.stat text {
+  color: #8a94a3;
+}
+
+.stat view {
+  margin-top: 14rpx;
+  font-size: 42rpx;
+  font-weight: 800;
+  color: #1592f5;
+}
+
+.block {
+  margin-top: 20rpx;
+  padding: 24rpx;
+}
+
+.block-title {
+  font-weight: 700;
+  margin-bottom: 14rpx;
+}
+
+.rank {
+  min-height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1rpx solid #eef1f4;
+}

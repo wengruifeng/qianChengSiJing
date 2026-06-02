@@ -1,0 +1,50 @@
+.metrics {
+  min-height: 310rpx;
+  padding: 36rpx;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30rpx;
+  background: linear-gradient(135deg, #328dc4, #37c9ca);
+  color: rgba(255,255,255,0.82);
+}
+
+.metric-card {
+  min-width: 0;
+}
+
+.metric-label {
+  line-height: 1.4;
+}
+
+.metrics text {
+  display: block;
+  margin-top: 18rpx;
+  color: #ffffff;
+  font-size: 52rpx;
+  font-weight: 300;
+}
+
+.tasks {
+  margin: -60rpx 20rpx 22rpx;
+  overflow: hidden;
+}
+
+.task-title,
+.task {
+  min-height: 86rpx;
+  padding: 0 30rpx;
+  border-bottom: 1rpx solid #eef1f4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.task text {
+  color: #9aa4b2;
+}
+
+.red { background: #f36d73; }
+.yellow { background: #e6b835; }
+.orange { background: #f29b4b; }
+.green { background: #38c49b; }
+.blue { background: #589ad8; }

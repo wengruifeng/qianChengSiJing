@@ -1,0 +1,26 @@
+<view class="page">
+  <scroll-view class="tabs" scroll-x>
+    <view class="tab {{active === item.value ? 'active' : ''}}" wx:for="{{tabs}}" wx:key="value" data-value="{{item.value}}" bindtap="changeTab">{{item.label}}</view>
+  </scroll-view>
+  <view class="audit card" wx:for="{{filteredAudits}}" wx:key="id">
+    <view class="between">
+      <view class="title">{{item.summary}}</view>
+      <view class="tag status-{{item.status}}">{{item.statusText}}</view>
+    </view>
+    <view class="meta-row">
+      <view class="meta-pill">{{item.typeText}}</view>
+      <view class="meta-pill">{{item.submitterName}}</view>
+    </view>
+    <view class="muted">提交时间：{{item.submittedAt}}</view>
+    <view class="muted">审核信息：{{item.reviewText}}</view>
+    <view class="diff" wx:if="{{item.diffText.length > 0}}">
+      <view wx:for="{{item.diffText}}" wx:key="field">{{item.field}}：{{item.before}} → {{item.after}}</view>
+    </view>
+    <view class="muted reject-text" wx:if="{{item.status === 'rejected'}}">拒绝原因：{{item.rejectReason || '后台拒绝'}}</view>
+    <view class="actions" wx:if="{{item.status === 'pending'}}">
+      <button data-id="{{item.id}}" bindtap="approve">通过</button>
+      <button data-id="{{item.id}}" bindtap="reject">拒绝</button>
+    </view>
+  </view>
+  <view class="card empty-box" wx:if="{{filteredAudits.length === 0}}">当前筛选条件下没有审核记录</view>
+</view>

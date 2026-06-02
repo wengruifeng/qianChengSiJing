@@ -1,0 +1,19 @@
+<view class="page">
+  <input class="search" placeholder="搜索客户/手机号/店铺" value="{{keyword}}" bindinput="onKeyword" />
+  <view class="card customer" wx:for="{{customers}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
+    <view class="between">
+      <view class="name">{{item.displayName}}</view>
+      <view class="tag {{item.statusClass}}">{{item.statusText}}</view>
+    </view>
+    <view class="muted">{{item.phone}} · {{item.region}}</view>
+    <view class="customer-meta">
+      <view class="meta-pill">订单 {{item.orderCount}}</view>
+      <view class="meta-pill">累计 ¥{{item.totalAmount}}</view>
+      <view class="meta-pill">地址 {{item.addressCount}}</view>
+    </view>
+    <view class="actions" wx:if="{{item.customerStatus === 'pending'}}">
+      <button catchtap="approve" data-id="{{item.id}}">通过</button>
+      <button catchtap="reject" data-id="{{item.id}}">拒绝</button>
+    </view>
+  </view>
+</view>

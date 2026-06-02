@@ -1,0 +1,34 @@
+<view class="page detail" wx:if="{{order}}">
+  <view class="status card">
+    <view class="status-title">{{statusText}}</view>
+    <text>{{order.orderNo}}</text>
+    <view class="status-pills">
+      <view class="status-pill">{{totalQty}} 件商品</view>
+      <view class="status-pill">{{goodsCount}} 个品项</view>
+    </view>
+  </view>
+  <view class="card block">
+    <view class="block-title">配送地址</view>
+    <view>{{order.addressSnapshot.contactName}} {{order.addressSnapshot.phone}}</view>
+    <view class="muted">{{order.addressSnapshot.region}} {{order.addressSnapshot.detail}}</view>
+  </view>
+  <view class="card block">
+    <view class="block-title">商品清单</view>
+    <view class="goods" wx:for="{{order.items}}" wx:key="id">
+      <image src="{{item.mainImage}}" mode="aspectFill"></image>
+      <view class="goods-info">
+        <view class="goods-name">{{item.productName}}</view>
+        <view class="muted">{{item.spec}}</view>
+        <view class="muted">¥{{item.price}}/{{item.unit}} ×{{item.quantity}}</view>
+      </view>
+      <view class="goods-total">¥{{item.subtotal}}</view>
+    </view>
+  </view>
+  <view class="card block">
+    <view class="between"><text>商品金额</text><text>¥{{order.amount}}</text></view>
+    <view class="between"><text>运费</text><text>¥0</text></view>
+    <view class="between total"><text>订单合计</text><text>¥{{order.amount}}</text></view>
+    <view class="muted remark">备注：{{remarkText}}</view>
+  </view>
+  <button wx:if="{{order.status === 'delivering'}}" class="btn-primary" bindtap="confirmReceive">确认收货</button>
+</view>

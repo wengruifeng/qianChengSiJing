@@ -1,0 +1,28 @@
+<view class="page">
+  <view class="tools">
+    <input placeholder="搜索商品/条码/编货号" value="{{keyword}}" bindinput="onKeyword" />
+    <picker range="{{statusOptions}}" range-key="label" bindchange="onStatus">
+      <view class="status-filter">{{statusLabel}}</view>
+    </picker>
+    <button bindtap="add">新增</button>
+  </view>
+  <view class="product card" wx:for="{{products}}" wx:key="id">
+    <image src="{{item.mainImage}}" mode="aspectFill"></image>
+    <view class="info">
+      <view class="name">{{item.name}}</view>
+      <view class="muted">{{item.spec}} · {{item.unit}}</view>
+      <view class="meta-row">
+        <view class="meta-pill">{{item.categoryName}}</view>
+        <view class="meta-pill status-{{item.saleStatus}}">{{item.saleStatusText}}</view>
+        <view class="meta-pill" wx:for="{{item.tags}}" wx:key="*this">{{item}}</view>
+      </view>
+      <view class="price-line">¥{{item.price}} <text class="muted">可售库存 {{item.availableStock}}</text></view>
+      <view class="danger" wx:if="{{item.warning}}">库存预警：低于 {{item.warningStock}}</view>
+    </view>
+    <view class="actions">
+      <button data-id="{{item.id}}" bindtap="edit">编辑</button>
+      <button data-id="{{item.id}}" bindtap="requestDelete">删除</button>
+    </view>
+  </view>
+  <view class="card empty-box" wx:if="{{products.length === 0}}">当前筛选条件下没有商品</view>
+</view>

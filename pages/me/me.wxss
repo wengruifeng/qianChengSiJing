@@ -1,0 +1,51 @@
+.profile {
+  min-height: 180rpx;
+  padding: 28rpx;
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  margin-bottom: 22rpx;
+}
+
+.avatar {
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 50%;
+  background: #1592f5;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42rpx;
+}
+
+.name {
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.profile button {
+  margin-left: auto;
+  width: 150rpx;
+  height: 64rpx;
+  background: #1592f5;
+  color: #ffffff;
+}
+
+.menu view {
+  min-height: 98rpx;
+  padding: 0 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1rpx solid #eef1f4;
+  font-size: 30rpx;
+}
+
+.menu view:last-child {
+  border-bottom: none;
+}
+
+.menu text {
+  color: #8a94a3;
+}

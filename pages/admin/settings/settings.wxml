@@ -1,0 +1,11 @@
+<view class="page">
+  <view class="form-card">
+    <view class="form-row"><view>店铺logo</view><text>›</text></view>
+    <view class="form-row"><view>店铺名称</view><text>前呈似景供应链</text></view>
+    <view class="form-row"><view>经营状态</view><text>营业中</text></view>
+    <view class="form-row"><view>行业范围</view><text>食品饮料</text></view>
+    <view class="form-row"><view>经营方式</view><text>批发</text></view>
+    <view class="form-row"><view>联系电话</view><text>13243592231</text></view>
+  </view>
+  <button class="btn-primary">保存</button>
+</view>

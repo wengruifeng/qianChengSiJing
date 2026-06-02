@@ -1,0 +1,23 @@
+.DS_Store
+Thumbs.db
+
+# Local editor / OS
+.idea/
+.vscode/
+
+# WeChat DevTools private config
+project.private.config.json
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+
+# Dependency caches
+node_modules/
+miniprogram_npm/
+
+# Local cloud / build artifacts
+dist/
+build/
+coverage/

@@ -1,0 +1,13 @@
+.settings {
+  min-height: 100vh;
+  background: #f4f4f8;
+}
+
+.tip {
+  padding: 34rpx 30rpx;
+  color: #6b7280;
+}
+
+.white {
+  background: #ffffff;
+}

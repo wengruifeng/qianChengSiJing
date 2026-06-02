@@ -1,0 +1,8 @@
+.desc {
+  width: 100%;
+  min-height: 180rpx;
+  margin: 20rpx 0;
+  padding: 24rpx;
+  border-radius: 8rpx;
+  background: #ffffff;
+}

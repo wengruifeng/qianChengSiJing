@@ -1,0 +1,44 @@
+<view class="cart-catalog">
+  <view class="search">
+    <input placeholder="名称/条形码/编货号/简拼" value="{{keyword}}" bindinput="onKeyword" confirm-type="search" />
+    <view class="scan-icon" bindtap="scanCode">
+      <view class="scan-core"></view>
+    </view>
+  </view>
+
+  <view class="body">
+    <scroll-view class="side" scroll-y>
+      <view class="side-item {{item.active ? 'active' : ''}}" wx:for="{{categories}}" wx:key="id" data-id="{{item.id}}" bindtap="changeCategory">
+        {{item.name}}
+      </view>
+    </scroll-view>
+
+    <scroll-view class="list" scroll-y>
+      <view class="list-item" wx:for="{{filteredProducts}}" wx:key="id" bindtap="openProduct" data-id="{{item.id}}">
+        <image src="{{item.mainImage}}" mode="aspectFill"></image>
+        <view class="info">
+          <view class="name">{{item.name}}</view>
+          <view class="tag">{{item.spec}}</view>
+          <view class="price-hidden" wx:if="{{!canSeePrice}}">***/{{item.unit}}</view>
+          <view class="price" wx:else>¥{{item.price}}/{{item.unit}}</view>
+          <view class="stock-tip sold-out" wx:if="{{item.isSoldOut}}">已售罄</view>
+          <view class="stock-tip low-stock" wx:elif="{{item.isLowStock}}">库存紧张，仅剩 {{item.availableStock}}{{item.unit}}</view>
+        </view>
+        <view wx:if="{{canSeePrice && !item.isSoldOut}}" class="add-btn" catchtap="addCart" data-id="{{item.id}}">
+          <view class="add-btn-icon"></view>
+        </view>
+      </view>
+      <empty wx:if="{{filteredProducts.length === 0}}" title="没有找到商品" desc="可换个关键词试试" />
+    </scroll-view>
+  </view>
+
+  <view class="price-bar" wx:if="{{!canSeePrice}}">
+    <text>商家设置了陌生人不能查看商品价格</text>
+    <button bindtap="goApply">{{applyButtonText}}</button>
+  </view>
+
+  <view class="summary" wx:else>
+    <view>已选 {{cartCount}} 件 <text>¥{{total}}</text></view>
+    <button bindtap="checkout">查看选购</button>
+  </view>
+</view>

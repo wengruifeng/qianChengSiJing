@@ -1,0 +1,14 @@
+<view class="page login">
+  <view class="title">前呈似景供应链</view>
+  <view class="sub">手机号登录后可申请查看商品价格</view>
+  <view class="form-card">
+    <view class="form-row">
+      <view class="form-label">手机号</view>
+      <input class="form-input" type="number" maxlength="11" placeholder="请输入手机号" value="{{phone}}" bindinput="onPhone" />
+    </view>
+  </view>
+  <button class="btn-primary" bindtap="login">登录</button>
+  <view class="tips">
+    测试账号：13800000000 超级管理员，13900000000 管理员，13700000000 已通过客户
+  </view>
+</view>

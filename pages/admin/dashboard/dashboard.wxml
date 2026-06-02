@@ -1,0 +1,39 @@
+<view class="admin-page">
+  <view class="metrics">
+    <view class="metric-card">
+      <view class="metric-label">累计销售额(元)</view>
+      <text>{{todayAmount}}</text>
+    </view>
+    <view class="metric-card">
+      <view class="metric-label">今日订单数</view>
+      <text>{{todayOrderCount}}</text>
+    </view>
+    <view class="metric-card">
+      <view class="metric-label">已通过客户</view>
+      <text>{{approvedCustomerCount}}</text>
+    </view>
+    <view class="metric-card">
+      <view class="metric-label">库存预警商品</view>
+      <text>{{warningProductCount}}</text>
+    </view>
+  </view>
+  <view class="tasks card">
+    <view class="between task-title"><text>今日待办</text><text>{{quickTasks.length}} 项</text></view>
+    <view class="task" wx:for="{{quickTasks}}" wx:key="label" bindtap="go" data-url="{{item.url}}">
+      <text>{{item.label}}</text>
+      <text>{{item.value}} ›</text>
+    </view>
+  </view>
+  <view class="admin-grid">
+    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/products/products"><view class="admin-grid-icon red"></view><text>商品管理</text></view>
+    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/customers/customers"><view class="admin-grid-icon yellow"></view><text>客户管理</text></view>
+    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/orders/orders"><view class="admin-grid-icon orange"></view><text>订单管理</text></view>
+    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/reconcile/reconcile"><view class="admin-grid-icon red"></view><text>对账中心</text></view>
+    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/audits/audits"><view class="admin-grid-icon green"></view><text>审核中心</text></view>
+    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/stats/stats"><view class="admin-grid-icon yellow"></view><text>数据统计</text></view>
+    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/settings/settings"><view class="admin-grid-icon blue"></view><text>店铺设置</text></view>
+    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/home-content/home-content"><view class="admin-grid-icon green"></view><text>首页内容</text></view>
+    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/admins/admins"><view class="admin-grid-icon blue"></view><text>管理员</text></view>
+    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/import-export/import-export"><view class="admin-grid-icon orange"></view><text>导入导出</text></view>
+  </view>
+</view>

@@ -1,0 +1,11 @@
+.btn-primary {
+  margin: 20rpx 0;
+}
+
+.admin {
+  padding: 22rpx;
+  margin-bottom: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

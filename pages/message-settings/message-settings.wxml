@@ -1,0 +1,15 @@
+<view class="settings">
+  <view class="tip">请关注公众号后绑定微信号</view>
+  <view class="form-row white">
+    <view>消息接收微信号</view>
+    <text class="primary">绑定</text>
+  </view>
+  <view class="form-row white">
+    <view>买家下单提醒</view>
+    <switch checked="{{true}}" color="#26bfd0"></switch>
+  </view>
+  <view class="form-row white">
+    <view>确认收货提醒</view>
+    <switch checked="{{true}}" color="#26bfd0"></switch>
+  </view>
+</view>

@@ -1,0 +1,107 @@
+.filters {
+  display: grid;
+  grid-template-columns: 1fr 190rpx;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.filters input,
+.filters picker {
+  height: 72rpx;
+  padding: 0 20rpx;
+  line-height: 72rpx;
+  border-radius: 8rpx;
+  background: #ffffff;
+}
+
+.order {
+  padding: 22rpx;
+  margin-bottom: 18rpx;
+}
+
+.order-no {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  padding-right: 12rpx;
+  word-break: break-all;
+}
+
+.status-tag {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.status-pending {
+  color: #d97706;
+  background: #fff7ed;
+}
+
+.status-confirmed {
+  color: #0369a1;
+  background: #e0f2fe;
+}
+
+.status-delivering {
+  color: #7c3aed;
+  background: #f3e8ff;
+}
+
+.status-completed {
+  color: #0f766e;
+  background: #ecfeff;
+}
+
+.status-cancelled {
+  color: #6b7280;
+  background: #f3f4f6;
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin: 14rpx 0;
+}
+
+.meta-pill {
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: #f3f6fb;
+  color: #64748b;
+  font-size: 22rpx;
+}
+
+.settlement-pending {
+  color: #d97706;
+  background: #fff7ed;
+}
+
+.settlement-settled {
+  color: #0f766e;
+  background: #ecfeff;
+}
+
+.goods {
+  margin: 14rpx 0;
+  line-height: 1.5;
+}
+
+.address-line,
+.remark-line {
+  margin-top: 8rpx;
+}
+
+.price {
+  color: #ef6c2f;
+  font-weight: 800;
+}
+
+.status-btn {
+  width: 140rpx;
+  height: 60rpx;
+  margin: 0;
+  font-size: 24rpx;
+}

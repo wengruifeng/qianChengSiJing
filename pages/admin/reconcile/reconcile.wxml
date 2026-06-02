@@ -1,0 +1,110 @@
+<view class="page reconcile-page">
+  <view class="card filters">
+    <view class="filter-row">
+      <view class="filter-label">订单编号</view>
+      <input class="filter-input" placeholder="支持搜索某一单" value="{{orderKeyword}}" bindinput="onOrderKeyword" />
+    </view>
+    <view class="filter-row">
+      <view class="filter-label">客户</view>
+      <picker range="{{customerOptions}}" range-key="label" value="{{customerIndex}}" bindchange="onCustomerChange">
+        <view class="picker-value">{{customerOptions[customerIndex].label}}</view>
+      </picker>
+    </view>
+    <view class="filter-row">
+      <view class="filter-label">开始日期</view>
+      <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+        <view class="picker-value">{{startDate}}</view>
+      </picker>
+    </view>
+    <view class="filter-row">
+      <view class="filter-label">结束日期</view>
+      <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+        <view class="picker-value">{{endDate}}</view>
+      </picker>
+    </view>
+    <view class="filter-row">
+      <view class="filter-label">结算状态</view>
+      <picker range="{{settlementOptions}}" range-key="label" value="{{settlementIndex}}" bindchange="onSettlementChange">
+        <view class="picker-value">{{settlementOptions[settlementIndex].label}}</view>
+      </picker>
+    </view>
+    <view class="filter-row">
+      <view class="filter-label">排序方式</view>
+      <picker range="{{sortOptions}}" range-key="label" value="{{sortIndex}}" bindchange="onSortChange">
+        <view class="picker-value">{{sortOptions[sortIndex].label}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="summary-grid">
+    <view class="card summary-box">
+      <view class="summary-label">订单数</view>
+      <view class="summary-value">{{summary.orderCount}}</view>
+    </view>
+    <view class="card summary-box">
+      <view class="summary-label">客户数</view>
+      <view class="summary-value">{{summary.customerCount}}</view>
+    </view>
+    <view class="card summary-box">
+      <view class="summary-label">商品总数</view>
+      <view class="summary-value">{{summary.itemCount}}</view>
+    </view>
+    <view class="card summary-box">
+      <view class="summary-label">商品金额</view>
+      <view class="summary-value">¥{{summary.amount}}</view>
+    </view>
+    <view class="card summary-box summary-box-sub">
+      <view class="summary-label">已选订单</view>
+      <view class="summary-value">{{summary.selectedOrderCount || 0}}</view>
+    </view>
+    <view class="card summary-box summary-box-sub">
+      <view class="summary-label">已选金额</view>
+      <view class="summary-value">¥{{summary.selectedAmount || '0.00'}}</view>
+    </view>
+  </view>
+
+  <view class="card action-panel">
+    <view class="between action-panel-top">
+      <view>
+        <view class="muted">当前结果 {{previewOrders.length}} 单</view>
+        <view class="selection-text">已选择 {{selectedOrderIds.length}} 单</view>
+      </view>
+      <view class="selection-actions">
+        <view class="text-action" bindtap="selectAllOrders" wx:if="{{previewOrders.length > 0}}">全选</view>
+        <view class="text-action" bindtap="clearSelectedOrders" wx:if="{{selectedOrderIds.length > 0}}">全不选</view>
+      </view>
+    </view>
+    <view class="action-buttons">
+      <button class="btn-ghost small-btn" bindtap="markFilteredSettled" wx:if="{{hasPendingInFiltered}}">批量标记已结算</button>
+      <button class="btn-primary small-btn primary-export-btn" bindtap="exportStatement">导出 Excel</button>
+    </view>
+  </view>
+
+  <view class="card order-card" wx:for="{{previewOrders}}" wx:key="id">
+    <view class="between order-head">
+      <view class="order-head-left" bindtap="toggleOrderSelection" data-id="{{item.id}}">
+        <view class="checkbox {{item.selected ? 'checkbox-active' : ''}}">
+          <view class="checkbox-inner" wx:if="{{item.selected}}"></view>
+        </view>
+        <view class="order-title">{{item.customerName}}</view>
+      </view>
+      <view class="tag {{item.settlementStatus === 'settled' ? 'tag-settled' : 'tag-pending'}}">{{item.settlementText}}</view>
+    </view>
+    <view class="muted">{{item.createdDate}} · {{item.orderNo}}</view>
+    <view class="muted">{{item.addressText}}</view>
+    <view class="goods">{{item.goodsText}}</view>
+    <view class="between order-footer">
+      <view>
+        <view class="price">¥{{item.amount}}</view>
+        <view class="muted">{{item.totalQty}} 件商品</view>
+      </view>
+      <view class="order-actions">
+        <button class="btn-ghost inline-btn" wx:if="{{item.settlementStatus === 'pending'}}" bindtap="markOneSettled" data-id="{{item.id}}">标记已结算</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="card empty-box" wx:if="{{previewOrders.length === 0}}">
+    当前筛选条件下没有订单
+  </view>
+</view>

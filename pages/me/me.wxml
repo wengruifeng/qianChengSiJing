@@ -1,0 +1,17 @@
+<view class="page me">
+  <view class="profile card">
+    <view class="avatar">{{initial}}</view>
+    <view>
+      <view class="name">{{user ? user.nickName : '未登录'}}</view>
+      <view class="muted">{{user ? user.phone : '登录后申请查看价格'}}</view>
+    </view>
+    <button wx:if="{{!user}}" bindtap="goLogin">登录</button>
+  </view>
+  <view class="card menu">
+    <view bindtap="goApply">价格查看申请 <text>{{statusText}}</text></view>
+    <view bindtap="goAddress">收货地址 <text>›</text></view>
+    <view bindtap="goMessages">消息推送 <text>›</text></view>
+    <view bindtap="goAgreement">协议及说明 <text>›</text></view>
+    <view wx:if="{{isAdmin}}" bindtap="goAdmin">后台管理 <text>›</text></view>
+  </view>
+</view>

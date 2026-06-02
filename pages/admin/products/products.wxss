@@ -1,0 +1,102 @@
+.tools {
+  display: grid;
+  grid-template-columns: 1fr 190rpx 130rpx;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.tools input {
+  height: 72rpx;
+  padding: 0 22rpx;
+  border-radius: 8rpx;
+  background: #ffffff;
+}
+
+.status-filter {
+  height: 72rpx;
+  padding: 0 20rpx;
+  line-height: 72rpx;
+  border-radius: 8rpx;
+  background: #ffffff;
+}
+
+.tools button {
+  width: 130rpx;
+  height: 72rpx;
+  margin: 0;
+  background: #1592f5;
+  color: #ffffff;
+}
+
+.product {
+  display: flex;
+  gap: 18rpx;
+  padding: 18rpx;
+  margin-bottom: 18rpx;
+}
+
+.product image {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 6rpx;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: 32rpx;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin: 12rpx 0;
+}
+
+.meta-pill {
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: #f3f6fb;
+  color: #64748b;
+  font-size: 22rpx;
+}
+
+.status-on {
+  color: #0f766e;
+  background: #ecfeff;
+}
+
+.status-off {
+  color: #6b7280;
+  background: #f3f4f6;
+}
+
+.price-line {
+  color: #ef6c2f;
+  font-weight: 800;
+}
+
+.danger {
+  margin-top: 10rpx;
+  color: #b91c1c;
+  font-size: 22rpx;
+}
+
+.actions button {
+  width: 100rpx;
+  height: 56rpx;
+  margin: 0 0 12rpx;
+  font-size: 24rpx;
+}
+
+.empty-box {
+  padding: 48rpx 24rpx;
+  text-align: center;
+  color: #8a94a3;
+}

@@ -1,0 +1,6 @@
+<view class="page">
+  <view class="card menu">
+    <view>用户协议 <text>›</text></view>
+    <view>隐私协议 <text>›</text></view>
+  </view>
+</view>

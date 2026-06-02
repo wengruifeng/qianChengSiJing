@@ -1,0 +1,73 @@
+.search {
+  width: 100%;
+  height: 72rpx;
+  padding: 0 22rpx;
+  margin-bottom: 20rpx;
+  border-radius: 8rpx;
+  background: #ffffff;
+}
+
+.customer {
+  padding: 24rpx;
+  margin-bottom: 18rpx;
+}
+
+.name {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.tag {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.status-not_applied {
+  color: #6b7280;
+  background: #f3f4f6;
+}
+
+.status-pending {
+  color: #d97706;
+  background: #fff7ed;
+}
+
+.status-approved {
+  color: #0f766e;
+  background: #ecfeff;
+}
+
+.status-rejected {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.customer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.meta-pill {
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: #f3f6fb;
+  color: #64748b;
+  font-size: 22rpx;
+}
+
+.actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+.actions button {
+  width: 130rpx;
+  height: 58rpx;
+  margin: 0;
+  font-size: 24rpx;
+}

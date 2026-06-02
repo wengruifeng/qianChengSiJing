@@ -1,0 +1,119 @@
+.orders {
+  min-height: 100vh;
+}
+
+.tabs {
+  white-space: nowrap;
+  height: 88rpx;
+  background: #ffffff;
+}
+
+.tab {
+  display: inline-block;
+  height: 88rpx;
+  line-height: 88rpx;
+  padding: 0 28rpx;
+  color: #6b7280;
+}
+
+.tab.active {
+  color: #1592f5;
+  font-weight: 700;
+  border-bottom: 4rpx solid #1592f5;
+}
+
+.order-card {
+  margin-bottom: 18rpx;
+  padding: 22rpx;
+}
+
+.no {
+  font-weight: 700;
+  flex: 1;
+  min-width: 0;
+  padding-right: 12rpx;
+  word-break: break-all;
+}
+
+.status-tag {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.status-pending {
+  color: #d97706;
+  background: #fff7ed;
+}
+
+.status-confirmed {
+  color: #0369a1;
+  background: #e0f2fe;
+}
+
+.status-delivering {
+  color: #7c3aed;
+  background: #f3e8ff;
+}
+
+.status-completed {
+  color: #0f766e;
+  background: #ecfeff;
+}
+
+.status-cancelled {
+  color: #6b7280;
+  background: #f3f4f6;
+}
+
+.summary-line {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.summary-pill {
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: #f3f6fb;
+  color: #64748b;
+  font-size: 22rpx;
+}
+
+.goods {
+  display: flex;
+  gap: 18rpx;
+  margin-top: 20rpx;
+}
+
+.goods image {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 6rpx;
+}
+
+.goods-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.goods-name {
+  line-height: 1.35;
+}
+
+.remark-line {
+  margin-top: 16rpx;
+  color: #64748b;
+  line-height: 1.45;
+  font-size: 24rpx;
+}
+
+.footer {
+  margin-top: 20rpx;
+}
+
+.footer text {
+  color: #ef6c2f;
+  font-weight: 700;
+}

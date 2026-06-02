@@ -1,0 +1,80 @@
+<view class="home">
+  <view class="top">
+    <view class="search" bindtap="goCatalog">
+      <text class="search-icon">⌕</text>
+      <text class="muted">名称/条形码/编货号/简拼</text>
+      <view class="scan-icon" catchtap="scanCode">
+        <view class="scan-core"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="hero">
+    <image class="hero-img" src="{{home.heroImage}}" mode="aspectFill"></image>
+    <view class="hero-text">
+      <view class="hero-brand">前呈似景供应链</view>
+      <view class="hero-title">{{home.bannerTitle}}</view>
+      <view class="hero-phone">TEL: {{home.servicePhone}}</view>
+    </view>
+  </view>
+
+  <view class="notice">
+    <view class="notice-track">{{home.notice}}</view>
+  </view>
+
+  <view class="cat-grid">
+    <view class="cat-item" wx:for="{{categories}}" wx:key="id" bindtap="openCategory" data-id="{{item.id}}">
+      <view class="cat-img">{{item.initial}}</view>
+      <view>{{item.name}}</view>
+    </view>
+  </view>
+
+  <view class="topic">
+    <image src="{{home.topicImage}}" mode="widthFix"></image>
+  </view>
+
+  <view class="section">
+    <view class="section-head">
+      <view class="section-title">店长推荐</view>
+      <view class="section-sub">常卖商品优先展示</view>
+    </view>
+    <view class="products">
+      <view class="product-card" wx:for="{{recommendedProducts}}" wx:key="id" bindtap="openProduct" data-id="{{item.id}}">
+        <image src="{{item.mainImage}}" mode="aspectFill"></image>
+        <view class="product-info">
+          <view class="product-name">{{item.name}}</view>
+          <view class="tag">{{item.spec}}</view>
+          <view class="stock-tip sold-out" wx:if="{{item.isSoldOut}}">已售罄</view>
+          <view class="stock-tip low-stock" wx:elif="{{item.isLowStock}}">库存紧张，仅剩 {{item.availableStock}}{{item.unit}}</view>
+          <view class="price-hidden" wx:if="{{!canSeePrice}}">***/{{item.unit}}</view>
+          <view class="price" wx:else>¥{{item.price}}/{{item.unit}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head">
+      <view class="section-title">新品上新</view>
+      <view class="section-sub">最近新增和主推上新</view>
+    </view>
+    <view class="products">
+      <view class="product-card" wx:for="{{newProducts}}" wx:key="id" bindtap="openProduct" data-id="{{item.id}}">
+        <image src="{{item.mainImage}}" mode="aspectFill"></image>
+        <view class="product-info">
+          <view class="product-name">{{item.name}}</view>
+          <view class="tag">{{item.spec}}</view>
+          <view class="stock-tip sold-out" wx:if="{{item.isSoldOut}}">已售罄</view>
+          <view class="stock-tip low-stock" wx:elif="{{item.isLowStock}}">库存紧张，仅剩 {{item.availableStock}}{{item.unit}}</view>
+          <view class="price-hidden" wx:if="{{!canSeePrice}}">***/{{item.unit}}</view>
+          <view class="price" wx:else>¥{{item.price}}/{{item.unit}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="price-bar" wx:if="{{!canSeePrice}}">
+    <text>商家设置了陌生人不能查看商品价格</text>
+    <button bindtap="goApply">申请查看</button>
+  </view>
+</view>

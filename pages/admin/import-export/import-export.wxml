@@ -1,0 +1,24 @@
+<view class="page">
+  <view class="card block">
+    <view class="title">Excel/CSV 导入</view>
+    <view class="muted">第一版先提供商品和客户导入模板说明，后续接正式解析和文件选择。</view>
+    <view class="template-item" wx:for="{{importTemplates}}" wx:key="name">
+      <view>
+        <view>{{item.name}}</view>
+        <view class="muted">{{item.fields}}</view>
+      </view>
+      <button class="small-btn" bindtap="previewTemplate" data-name="{{item.name}}" data-fields="{{item.fields}}">查看模板</button>
+    </view>
+    <button bindtap="mockImport">模拟导入并提交审核</button>
+  </view>
+  <view class="card block">
+    <view class="title">数据导出</view>
+    <view class="template-item" wx:for="{{exportItems}}" wx:key="key">
+      <view>
+        <view>{{item.name}}</view>
+        <view class="muted">当前可导出 {{item.count}} 条</view>
+      </view>
+      <button class="small-btn" bindtap="exportData" data-type="{{item.key}}">导出</button>
+    </view>
+  </view>
+</view>

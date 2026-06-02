@@ -1,0 +1,24 @@
+<view class="page">
+  <view class="stat-grid">
+    <view class="card stat"><text>销售额</text><view>¥{{amount}}</view></view>
+    <view class="card stat"><text>订单数</text><view>{{orderCount}}</view></view>
+    <view class="card stat"><text>客户数</text><view>{{customerCount}}</view></view>
+    <view class="card stat"><text>商品数</text><view>{{productCount}}</view></view>
+    <view class="card stat"><text>待结算金额</text><view>¥{{pendingSettlementAmount}}</view></view>
+    <view class="card stat"><text>已结算金额</text><view>¥{{settledAmount}}</view></view>
+  </view>
+  <view class="card block">
+    <view class="block-title">热销商品</view>
+    <view class="rank" wx:for="{{hotProducts}}" wx:key="name"><text>{{index + 1}}. {{item.name}}</text><text>{{item.qty}}</text></view>
+  </view>
+  <view class="card block">
+    <view class="block-title">客户采购排行</view>
+    <view class="rank" wx:for="{{topCustomers}}" wx:key="name"><text>{{index + 1}}. {{item.name}}</text><text>¥{{item.amount}}</text></view>
+    <view class="muted" wx:if="{{topCustomers.length === 0}}">暂无排行数据</view>
+  </view>
+  <view class="card block">
+    <view class="block-title">库存预警</view>
+    <view class="rank" wx:for="{{warnings}}" wx:key="id"><text>{{item.name}}</text><text>{{item.availableStock}}</text></view>
+    <view class="muted" wx:if="{{warnings.length === 0}}">当前没有库存预警商品</view>
+  </view>
+</view>

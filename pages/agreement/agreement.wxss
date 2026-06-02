@@ -1,0 +1,9 @@
+.menu view {
+  min-height: 108rpx;
+  padding: 0 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1rpx solid #eef1f4;
+  font-size: 32rpx;
+}

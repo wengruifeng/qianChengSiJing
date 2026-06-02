@@ -1,0 +1,25 @@
+.login {
+  padding-top: 88rpx;
+}
+
+.title {
+  font-size: 48rpx;
+  font-weight: 800;
+  color: #123e87;
+}
+
+.sub {
+  margin: 12rpx 0 54rpx;
+  color: #586274;
+  font-size: 32rpx;
+}
+
+.btn-primary {
+  margin-top: 38rpx;
+}
+
+.tips {
+  margin-top: 34rpx;
+  color: #8a94a3;
+  line-height: 1.6;
+}

@@ -1,0 +1,88 @@
+.product-page {
+  padding-bottom: 120rpx;
+}
+
+.swiper {
+  height: 560rpx;
+  background: #edf1f5;
+}
+
+.swiper image {
+  width: 100%;
+  height: 100%;
+}
+
+.info {
+  margin: 20rpx;
+  padding: 28rpx;
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: 700;
+  margin-bottom: 16rpx;
+  line-height: 1.35;
+}
+
+.tag {
+  font-size: 28rpx;
+  line-height: 1.55;
+  color: #6b7280;
+  word-break: break-all;
+}
+
+.price-row {
+  margin-top: 22rpx;
+}
+
+.price,
+.price-hidden {
+  color: #ef6c2f;
+  font-size: 38rpx;
+  font-weight: 800;
+}
+
+.stock-tip {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+
+.sold-out {
+  color: #dc2626;
+}
+
+.low-stock {
+  color: #d97706;
+}
+
+.desc {
+  margin: 20rpx;
+  padding: 28rpx;
+  line-height: 1.7;
+}
+
+.block-title {
+  margin-bottom: 14rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 108rpx;
+  padding: 14rpx 24rpx;
+  display: grid;
+  grid-template-columns: 220rpx 1fr;
+  gap: 18rpx;
+  background: #ffffff;
+  box-shadow: 0 -4rpx 16rpx rgba(18, 48, 82, 0.08);
+}
+
+.bottom .btn-primary[disabled] {
+  background: #c8d7e6;
+  color: #ffffff;
+}

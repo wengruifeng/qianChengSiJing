@@ -1,0 +1,30 @@
+<view class="orders">
+  <scroll-view class="tabs" scroll-x>
+    <view class="tab {{active === item.value ? 'active' : ''}}" wx:for="{{tabs}}" wx:key="value" data-value="{{item.value}}" bindtap="changeTab">{{item.label}}</view>
+  </scroll-view>
+  <view class="page">
+    <view class="order-card card" wx:for="{{filteredOrders}}" wx:key="id" bindtap="openOrder" data-id="{{item.id}}">
+      <view class="between">
+        <view class="no">{{item.orderNo}}</view>
+        <view class="status-tag {{item.statusClass}}">{{item.statusText}}</view>
+      </view>
+      <view class="summary-line">
+        <view class="summary-pill">{{item.totalQty}} 件商品</view>
+        <view class="summary-pill">{{item.items.length}} 个品项</view>
+      </view>
+      <view class="goods" wx:for="{{item.items}}" wx:key="id">
+        <image src="{{item.mainImage}}" mode="aspectFill"></image>
+        <view class="goods-info">
+          <view class="goods-name">{{item.productName}}</view>
+          <view class="muted">{{item.spec}} ×{{item.quantity}}</view>
+        </view>
+      </view>
+      <view class="remark-line">备注：{{item.remarkText}}</view>
+      <view class="between footer">
+        <view class="muted">{{item.createdAt}}</view>
+        <view>合计 <text>¥{{item.amount}}</text></view>
+      </view>
+    </view>
+    <empty wx:if="{{filteredOrders.length === 0}}" title="暂无订单" />
+  </view>
+</view>

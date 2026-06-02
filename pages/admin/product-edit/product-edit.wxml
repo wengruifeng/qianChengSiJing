@@ -1,0 +1,19 @@
+<view class="page">
+  <view class="form-card">
+    <view class="form-row"><view class="form-label">展示名称*</view><input class="form-input" value="{{form.name}}" data-key="name" bindinput="onInput" placeholder="请输入展示名称" /></view>
+    <view class="form-row"><view class="form-label">货品条码</view><input class="form-input" value="{{form.barcode}}" data-key="barcode" bindinput="onInput" placeholder="请输入货品条码" /></view>
+    <view class="form-row"><view class="form-label">编货号</view><input class="form-input" value="{{form.code}}" data-key="code" bindinput="onInput" placeholder="请输入编货号" /></view>
+    <view class="form-row"><view class="form-label">简拼</view><input class="form-input" value="{{form.simple}}" data-key="simple" bindinput="onInput" placeholder="请输入简拼" /></view>
+    <view class="form-row"><view class="form-label">分类ID*</view><input class="form-input" value="{{form.categoryId}}" data-key="categoryId" bindinput="onInput" placeholder="如 cat_1" /></view>
+    <view class="form-row"><view class="form-label">销售价*</view><input class="form-input" type="digit" value="{{form.price}}" data-key="price" bindinput="onInput" placeholder="请输入销售价" /></view>
+    <view class="form-row"><view class="form-label">库存*</view><input class="form-input" type="number" value="{{form.stock}}" data-key="stock" bindinput="onInput" placeholder="请输入库存" /></view>
+    <view class="form-row"><view class="form-label">预警库存</view><input class="form-input" type="number" value="{{form.warningStock}}" data-key="warningStock" bindinput="onInput" placeholder="请输入预警库存" /></view>
+    <view class="form-row"><view class="form-label">规格说明</view><input class="form-input" value="{{form.spec}}" data-key="spec" bindinput="onInput" placeholder="如 1kg*10包/件" /></view>
+    <view class="form-row"><view class="form-label">单位</view><input class="form-input" value="{{form.unit}}" data-key="unit" bindinput="onInput" placeholder="件/包/箱" /></view>
+    <view class="form-row"><view class="form-label">主图路径</view><input class="form-input" value="{{form.mainImage}}" data-key="mainImage" bindinput="onInput" placeholder="云存储 fileID 或本地路径" /></view>
+    <view class="form-row"><view class="form-label">标签</view><input class="form-input" value="{{tagText}}" bindinput="onTags" placeholder="新品,推荐,热销" /></view>
+    <view class="form-row"><view class="form-label">是否上架</view><switch checked="{{form.saleStatus === 'on'}}" bindchange="onSale"></switch></view>
+  </view>
+  <textarea class="desc" placeholder="商品描述" value="{{form.description}}" data-key="description" bindinput="onInput"></textarea>
+  <button class="btn-primary" bindtap="submit">提交审核</button>
+</view>

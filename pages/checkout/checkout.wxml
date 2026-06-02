@@ -1,0 +1,35 @@
+<view class="page checkout">
+  <view class="address card" bindtap="chooseAddress">
+    <view wx:if="{{address}}">
+      <view class="addr-title">{{address.contactName}} {{address.phone}}</view>
+      <view class="muted">{{address.region}} {{address.detail}}</view>
+    </view>
+    <view wx:else class="muted">请选择收货地址</view>
+    <text>›</text>
+  </view>
+  <view class="card items">
+    <view class="item" wx:for="{{items}}" wx:key="id">
+      <view class="item-main">
+        <view class="item-name">{{item.product.name}}</view>
+        <view class="item-spec">{{item.product.spec}}</view>
+      </view>
+      <view class="qty-control">
+        <button class="qty-btn" bindtap="decreaseQty" data-id="{{item.id}}">-</button>
+        <input class="qty-input" type="number" value="{{item.quantity}}" data-id="{{item.id}}" bindblur="onQtyBlur" />
+        <button class="qty-btn" bindtap="increaseQty" data-id="{{item.id}}">+</button>
+      </view>
+      <text class="subtotal">¥{{item.subtotalText}}</text>
+    </view>
+    <view class="empty-cart" wx:if="{{items.length === 0}}">当前还没有加入选购的商品</view>
+  </view>
+  <view class="form-card">
+    <view class="form-row">
+      <view class="form-label">订单备注</view>
+      <input class="form-input" placeholder="选填" value="{{remark}}" bindinput="onRemark" />
+    </view>
+  </view>
+  <view class="bottom">
+    <view>合计 <text>¥{{total}}</text></view>
+    <button bindtap="submit" disabled="{{items.length === 0}}">提交订单</button>
+  </view>
+</view>
