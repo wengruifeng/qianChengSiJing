@@ -198,3 +198,21 @@
   - `pages/address/address.js`
   - `pages/admin/customers/customers.js`
   - `pages/admin/customer-detail/customer-detail.js`
+
+### 阶段 6 进展
+
+- 扩展 `cloudfunctions/api`：
+  - 新增 `createOrder`
+  - 新增 `listUserOrders`
+  - 新增 `getOrderDetail`
+  - 新增 `confirmReceive`
+  - 新增 `listAdminOrders`
+  - 新增 `updateOrderStatus`
+- 新增 `utils/order-service.js`：
+  - 统一封装订单提交、订单查询、后台订单状态变更、库存锁定/释放/扣减的 cloud-first 访问
+  - 云失败时按配置回退本地 mock
+- 切换为 cloud-first 的页面：
+  - `pages/checkout/checkout.js`
+  - `pages/orders/orders.js`
+  - `pages/order-detail/order-detail.js`
+  - `pages/admin/orders/orders.js`

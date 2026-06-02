@@ -1,4 +1,4 @@
-const { getStore, updateStore, nowText } = require('../../utils/store');
+const { fetchOrderDetail, confirmReceive } = require('../../utils/order-service');
 
 Page({
   data: {
@@ -19,27 +19,37 @@ Page({
   },
 
   refresh() {
-    const order = getStore().orders.find((item) => item.id === this.data.id);
-    const totalQty = order ? order.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
-    this.setData({
-      order,
-      statusText: order ? this.data.statusMap[order.status] : '',
-      statusClass: order ? `status-${order.status}` : '',
-      remarkText: order && order.remark ? order.remark : '无',
-      totalQty,
-      goodsCount: order ? order.items.length : 0
+    fetchOrderDetail(this.data.id).then((order) => {
+      const totalQty = order ? order.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
+      this.setData({
+        order,
+        statusText: order ? this.data.statusMap[order.status] : '',
+        statusClass: order ? `status-${order.status}` : '',
+        remarkText: order && order.remark ? order.remark : '无',
+        totalQty,
+        goodsCount: order ? order.items.length : 0
+      });
+    }).catch(() => {
+      this.setData({
+        order: null,
+        statusText: '',
+        statusClass: '',
+        remarkText: '无',
+        totalQty: 0,
+        goodsCount: 0
+      });
     });
   },
 
   confirmReceive() {
-    updateStore((store) => {
-      const order = store.orders.find((item) => item.id === this.data.id);
-      if (order) {
-        order.status = 'completed';
-        order.completedAt = nowText();
-      }
+    confirmReceive(this.data.id).then(() => {
+      wx.showToast({ title: '已确认收货' });
+      this.refresh();
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '操作失败，请稍后再试',
+        icon: 'none'
+      });
     });
-    wx.showToast({ title: '已确认收货' });
-    this.refresh();
   }
 });

@@ -304,6 +304,242 @@ async function getCustomerDetail(payload) {
   });
 }
 
+async function listOrderItemsByOrderIds(orderIds) {
+  if (!orderIds.length) return [];
+  const tasks = orderIds.map((id) => db.collection('order_items').where({ orderId: id }).get());
+  const results = await Promise.all(tasks);
+  return results.flatMap((res) => res.data);
+}
+
+function attachItemsToOrders(orders, items) {
+  const map = {};
+  items.forEach((item) => {
+    if (!map[item.orderId]) map[item.orderId] = [];
+    map[item.orderId].push(item);
+  });
+  return orders.map((order) => ({
+    ...order,
+    items: map[order.id] || []
+  }));
+}
+
+async function createOrder(payload) {
+  const { addressId, address, remark, items = [] } = payload;
+  if (!items.length) return fail('请先选择商品', 'ORDER_ITEMS_REQUIRED');
+
+  const wxContext = cloud.getWXContext();
+  const userRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
+  const user = userRes.data[0] || null;
+  if (!user) return fail('未找到当前登录用户', 'CURRENT_USER_NOT_FOUND');
+
+  let addressSnapshot = address || null;
+  if (addressId) {
+    const addressRes = await db.collection('addresses').where({ id: addressId, userId: user.id }).limit(1).get();
+    addressSnapshot = addressRes.data[0] || addressSnapshot;
+  }
+  if (!addressSnapshot) return fail('请选择收货地址', 'ADDRESS_REQUIRED');
+
+  const orderProducts = [];
+  let amount = 0;
+  for (const item of items) {
+    const productRes = await db.collection('products').where({ id: item.productId, deleteStatus: 'normal', saleStatus: 'on' }).limit(1).get();
+    const product = productRes.data[0] || null;
+    if (!product) return fail('存在不可下单商品', 'PRODUCT_NOT_FOUND');
+    const availableStock = Math.max(0, Number(product.stock || 0) - Number(product.lockedStock || 0));
+    if (availableStock < item.quantity) {
+      return fail(`${product.name}库存不足`, 'INSUFFICIENT_STOCK');
+    }
+    orderProducts.push({ product, quantity: item.quantity });
+    amount += Number(product.price || 0) * Number(item.quantity || 0);
+  }
+
+  const orderId = nextId('order');
+  const orderNo = `QCSJ${Date.now()}`;
+  const order = {
+    id: orderId,
+    orderNo,
+    userId: user.id,
+    customerName: user.company || user.nickName,
+    customerPhone: user.phone,
+    addressSnapshot,
+    status: 'pending',
+    settlementStatus: 'pending',
+    amount,
+    remark: remark || '',
+    paymentMethod: 'offline',
+    paymentStatus: 'unpaid',
+    paymentAmount: 0,
+    paymentTime: '',
+    paymentNo: '',
+    createdAt: nowText(),
+    completedAt: ''
+  };
+  await db.collection('orders').add({ data: order });
+
+  const orderItems = [];
+  for (const item of orderProducts) {
+    const orderItem = {
+      id: nextId('oi'),
+      orderId,
+      orderNo,
+      productId: item.product.id,
+      productName: item.product.name,
+      spec: item.product.spec,
+      unit: item.product.unit,
+      mainImage: item.product.mainImage,
+      price: item.product.price,
+      quantity: item.quantity,
+      subtotal: Number(item.product.price || 0) * Number(item.quantity || 0)
+    };
+    orderItems.push(orderItem);
+    await db.collection('order_items').add({ data: orderItem });
+    await db.collection('products').doc(item.product._id).update({
+      data: {
+        lockedStock: Number(item.product.lockedStock || 0) + Number(item.quantity || 0),
+        updatedAt: nowText()
+      }
+    });
+  }
+
+  await db.collection('operation_logs').add({
+    data: {
+      id: nextId('op'),
+      operatorId: user.id,
+      operatorName: user.nickName,
+      type: 'create_order',
+      target: orderNo,
+      summary: `客户提交订单 ${orderNo}`,
+      createdAt: nowText()
+    }
+  });
+
+  return ok({
+    ...order,
+    items: orderItems
+  });
+}
+
+async function listUserOrders(payload) {
+  const { userId } = payload;
+  if (!userId) return fail('缺少用户 ID', 'USER_ID_REQUIRED');
+  const res = await db.collection('orders').where({ userId }).get();
+  const orders = res.data.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  const items = await listOrderItemsByOrderIds(orders.map((item) => item.id));
+  return ok(attachItemsToOrders(orders, items));
+}
+
+async function getOrderDetail(payload) {
+  const { id } = payload;
+  if (!id) return fail('缺少订单 ID', 'ORDER_ID_REQUIRED');
+  const res = await db.collection('orders').where({ id }).limit(1).get();
+  const order = res.data[0] || null;
+  if (!order) return fail('订单不存在', 'ORDER_NOT_FOUND');
+  const itemRes = await db.collection('order_items').where({ orderId: id }).get();
+  return ok({
+    ...order,
+    items: itemRes.data
+  });
+}
+
+async function confirmReceive(payload) {
+  const { id } = payload;
+  if (!id) return fail('缺少订单 ID', 'ORDER_ID_REQUIRED');
+  const res = await db.collection('orders').where({ id }).limit(1).get();
+  const order = res.data[0] || null;
+  if (!order) return fail('订单不存在', 'ORDER_NOT_FOUND');
+  const patch = {
+    status: 'completed',
+    completedAt: nowText()
+  };
+  await db.collection('orders').doc(order._id).update({ data: patch });
+  const itemsRes = await db.collection('order_items').where({ orderId: id }).get();
+  return ok({
+    ...order,
+    ...patch,
+    items: itemsRes.data
+  });
+}
+
+async function listAdminOrders() {
+  const res = await db.collection('orders').get();
+  const orders = res.data.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  const items = await listOrderItemsByOrderIds(orders.map((item) => item.id));
+  return ok(attachItemsToOrders(orders, items));
+}
+
+async function updateOrderStatus(payload) {
+  const { id, nextStatus } = payload;
+  if (!id || !nextStatus) return fail('缺少订单状态参数', 'ORDER_STATUS_PARAMS_REQUIRED');
+  const orderRes = await db.collection('orders').where({ id }).limit(1).get();
+  const order = orderRes.data[0] || null;
+  if (!order) return fail('订单不存在', 'ORDER_NOT_FOUND');
+  const itemsRes = await db.collection('order_items').where({ orderId: id }).get();
+  const items = itemsRes.data;
+  const oldStatus = order.status;
+
+  if (oldStatus !== 'confirmed' && nextStatus === 'confirmed') {
+    for (const item of items) {
+      const productRes = await db.collection('products').where({ id: item.productId }).limit(1).get();
+      const product = productRes.data[0] || null;
+      if (product) {
+        await db.collection('products').doc(product._id).update({
+          data: {
+            lockedStock: Math.max(0, Number(product.lockedStock || 0) - Number(item.quantity || 0)),
+            stock: Math.max(0, Number(product.stock || 0) - Number(item.quantity || 0)),
+            updatedAt: nowText()
+          }
+        });
+      }
+    }
+  }
+
+  if (nextStatus === 'cancelled' && oldStatus !== 'confirmed') {
+    for (const item of items) {
+      const productRes = await db.collection('products').where({ id: item.productId }).limit(1).get();
+      const product = productRes.data[0] || null;
+      if (product) {
+        await db.collection('products').doc(product._id).update({
+          data: {
+            lockedStock: Math.max(0, Number(product.lockedStock || 0) - Number(item.quantity || 0)),
+            updatedAt: nowText()
+          }
+        });
+      }
+    }
+  }
+
+  const patch = {
+    status: nextStatus,
+    updatedAt: nowText()
+  };
+  if (nextStatus === 'completed') patch.completedAt = nowText();
+  await db.collection('orders').doc(order._id).update({ data: patch });
+
+  await db.collection('operation_logs').add({
+    data: {
+      id: nextId('op'),
+      operatorId: '',
+      operatorName: '后台',
+      type: 'order_status',
+      target: order.orderNo,
+      summary: `订单状态改为${({
+        pending: '待确认',
+        confirmed: '已确认',
+        delivering: '配送中',
+        completed: '已完成',
+        cancelled: '已取消'
+      })[nextStatus] || nextStatus}`,
+      createdAt: nowText()
+    }
+  });
+
+  return ok({
+    ...order,
+    ...patch,
+    items
+  });
+}
+
 exports.main = async (event) => {
   const { action, payload = {} } = event;
 
@@ -361,6 +597,30 @@ exports.main = async (event) => {
 
   if (action === 'getCustomerDetail') {
     return getCustomerDetail(payload);
+  }
+
+  if (action === 'createOrder') {
+    return createOrder(payload);
+  }
+
+  if (action === 'listUserOrders') {
+    return listUserOrders(payload);
+  }
+
+  if (action === 'getOrderDetail') {
+    return getOrderDetail(payload);
+  }
+
+  if (action === 'confirmReceive') {
+    return confirmReceive(payload);
+  }
+
+  if (action === 'listAdminOrders') {
+    return listAdminOrders(payload);
+  }
+
+  if (action === 'updateOrderStatus') {
+    return updateOrderStatus(payload);
   }
 
   if (action === 'createAudit') {

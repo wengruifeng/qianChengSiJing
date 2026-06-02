@@ -1,6 +1,7 @@
 const { getCurrentUser, canSeePrice } = require('../../utils/auth');
 const { getCartItems, updateCartQuantity } = require('../../utils/business');
-const { getStore, updateStore, nextId, nowText, clone } = require('../../utils/store');
+const { fetchAddressesByCurrentUser } = require('../../utils/customer-service');
+const { submitOrder } = require('../../utils/order-service');
 
 Page({
   data: {
@@ -21,15 +22,19 @@ Page({
       setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) }), 300);
       return;
     }
-    const store = getStore();
     const items = getCartItems().filter((item) => item.checked).map((item) => ({
       ...item,
       subtotalText: (item.product.price * item.quantity).toFixed(2)
     }));
-    const addressId = wx.getStorageSync('zht_checkout_address_id');
-    const address = store.addresses.find((item) => item.id === addressId) || store.addresses.find((item) => item.userId === user.id && item.isDefault) || null;
-    const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-    this.setData({ items, address, total: total.toFixed(2) });
+    fetchAddressesByCurrentUser().then((addresses) => {
+      const addressId = wx.getStorageSync('zht_checkout_address_id');
+      const address = addresses.find((item) => item.id === addressId) || addresses.find((item) => item.isDefault) || null;
+      const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+      this.setData({ items, address, total: total.toFixed(2) });
+    }).catch(() => {
+      const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+      this.setData({ items, address: null, total: total.toFixed(2) });
+    });
   },
 
   chooseAddress() {
@@ -89,64 +94,23 @@ Page({
       wx.showToast({ title: '请选择收货地址', icon: 'none' });
       return;
     }
-    const user = getCurrentUser();
     const items = this.data.items;
     const insufficient = items.find((item) => item.product.stock - item.product.lockedStock < item.quantity);
     if (insufficient) {
       wx.showToast({ title: `${insufficient.product.name}库存不足`, icon: 'none' });
       return;
     }
-    let orderId = '';
-    updateStore((store) => {
-      orderId = nextId('order');
-      const orderNo = `QCSJ${Date.now()}`;
-      const amount = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-      store.orders.unshift({
-        id: orderId,
-        orderNo,
-        userId: user.id,
-        customerName: user.company || user.nickName,
-        customerPhone: user.phone,
-        addressSnapshot: clone(this.data.address),
-        status: 'pending',
-        settlementStatus: 'pending',
-        amount,
-        remark: this.data.remark,
-        paymentMethod: 'offline',
-        paymentStatus: 'unpaid',
-        paymentAmount: 0,
-        paymentTime: '',
-        paymentNo: '',
-        createdAt: nowText(),
-        completedAt: '',
-        items: items.map((item) => ({
-          id: nextId('oi'),
-          productId: item.product.id,
-          productName: item.product.name,
-          spec: item.product.spec,
-          unit: item.product.unit,
-          mainImage: item.product.mainImage,
-          price: item.product.price,
-          quantity: item.quantity,
-          subtotal: item.product.price * item.quantity
-        }))
-      });
-      items.forEach((item) => {
-        const product = store.products.find((productItem) => productItem.id === item.product.id);
-        if (product) product.lockedStock += item.quantity;
-      });
-      store.cart = store.cart.filter((cart) => !(cart.userId === user.id && cart.checked));
-      store.operationLogs.unshift({
-        id: nextId('op'),
-        operatorId: user.id,
-        operatorName: user.nickName,
-        type: 'create_order',
-        target: orderNo,
-        summary: `客户提交订单 ${orderNo}`,
-        createdAt: nowText()
+    submitOrder({
+      address: this.data.address,
+      remark: this.data.remark
+    }).then((order) => {
+      wx.showToast({ title: '订单已提交' });
+      setTimeout(() => wx.redirectTo({ url: `/pages/order-detail/order-detail?id=${order.id}` }), 500);
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '提交失败，请稍后再试',
+        icon: 'none'
       });
     });
-    wx.showToast({ title: '订单已提交' });
-    setTimeout(() => wx.redirectTo({ url: `/pages/order-detail/order-detail?id=${orderId}` }), 500);
   }
 });
