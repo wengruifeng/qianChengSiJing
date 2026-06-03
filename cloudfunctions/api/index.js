@@ -27,6 +27,12 @@ async function findUserById(id) {
   return res.data[0] || null;
 }
 
+async function findUserByOpenId(openid) {
+  if (!openid) return null;
+  const res = await db.collection('users').where({ openid }).limit(1).get();
+  return res.data[0] || null;
+}
+
 function nowText() {
   const date = new Date();
   const pad = (n) => `${n}`.padStart(2, '0');
@@ -35,6 +41,45 @@ function nowText() {
 
 function nextId(prefix) {
   return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+
+async function getCurrentCloudUser() {
+  const wxContext = cloud.getWXContext();
+  return findUserByOpenId(wxContext.OPENID);
+}
+
+async function requireCurrentCloudUser() {
+  const user = await getCurrentCloudUser();
+  if (!user) throw new Error('CURRENT_USER_NOT_FOUND');
+  return user;
+}
+
+function isAdminRole(role) {
+  return role === 'admin' || role === 'super_admin';
+}
+
+async function requireAdminCloudUser() {
+  const user = await requireCurrentCloudUser();
+  if (!isAdminRole(user.role)) throw new Error('ADMIN_PERMISSION_DENIED');
+  return user;
+}
+
+async function requireSuperAdminCloudUser() {
+  const user = await requireCurrentCloudUser();
+  if (user.role !== 'super_admin') throw new Error('SUPER_ADMIN_PERMISSION_DENIED');
+  return user;
+}
+
+function mapPermissionError(error) {
+  if (!error || !error.message) return null;
+  const mapping = {
+    CURRENT_USER_NOT_FOUND: fail('未找到当前登录用户', 'CURRENT_USER_NOT_FOUND'),
+    ADMIN_PERMISSION_DENIED: fail('仅管理员可操作', 'ADMIN_PERMISSION_DENIED'),
+    SUPER_ADMIN_PERMISSION_DENIED: fail('仅超级管理员可操作', 'SUPER_ADMIN_PERMISSION_DENIED'),
+    ORDER_PERMISSION_DENIED: fail('无权查看该订单', 'ORDER_PERMISSION_DENIED'),
+    ADDRESS_PERMISSION_DENIED: fail('无权查看该地址', 'ADDRESS_PERMISSION_DENIED')
+  };
+  return mapping[error.message] || null;
 }
 
 async function loginByPhone(payload) {
@@ -87,9 +132,10 @@ async function loginByPhone(payload) {
 
 async function getCurrentUser(payload) {
   const { userId, phone } = payload;
-  let user = null;
+  const wxContext = cloud.getWXContext();
+  let user = await findUserByOpenId(wxContext.OPENID);
 
-  if (userId) user = await findUserById(userId);
+  if (!user && userId) user = await findUserById(userId);
   if (!user && phone) user = await findUserByPhone(phone);
 
   if (!user) {
@@ -133,6 +179,7 @@ async function listProducts() {
 }
 
 async function listAdminProducts() {
+  await requireAdminCloudUser();
   const res = await db.collection('products')
     .where({ deleteStatus: 'normal' })
     .orderBy('sort', 'asc')
@@ -155,9 +202,8 @@ async function getHomeContent() {
 }
 
 async function listCartItems(payload) {
-  const { userId } = payload;
-  if (!userId) return fail('缺少用户 ID', 'USER_ID_REQUIRED');
-  const cartRes = await db.collection('carts').where({ userId }).get();
+  const user = await requireCurrentCloudUser();
+  const cartRes = await db.collection('carts').where({ userId: user.id }).get();
   const cartItems = cartRes.data;
   const result = [];
   for (const item of cartItems) {
@@ -171,10 +217,7 @@ async function listCartItems(payload) {
 async function addToCart(payload) {
   const { productId, quantity = 1 } = payload;
   if (!productId) return fail('缺少商品 ID', 'PRODUCT_ID_REQUIRED');
-  const wxContext = cloud.getWXContext();
-  const userRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
-  const user = userRes.data[0] || null;
-  if (!user) return fail('未找到当前登录用户', 'CURRENT_USER_NOT_FOUND');
+  const user = await requireCurrentCloudUser();
   const productRes = await db.collection('products').where({ id: productId, deleteStatus: 'normal', saleStatus: 'on' }).limit(1).get();
   const product = productRes.data[0] || null;
   if (!product) return fail('商品不存在', 'PRODUCT_NOT_FOUND');
@@ -211,10 +254,7 @@ async function addToCart(payload) {
 async function updateCartQuantity(payload) {
   const { cartId, quantity } = payload;
   if (!cartId) return fail('缺少购物车 ID', 'CART_ID_REQUIRED');
-  const wxContext = cloud.getWXContext();
-  const userRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
-  const user = userRes.data[0] || null;
-  if (!user) return fail('未找到当前登录用户', 'CURRENT_USER_NOT_FOUND');
+  const user = await requireCurrentCloudUser();
   const cartRes = await db.collection('carts').where({ id: cartId, userId: user.id }).limit(1).get();
   const cartItem = cartRes.data[0] || null;
   if (!cartItem) return fail('购物车项不存在', 'CART_ITEM_NOT_FOUND');
@@ -244,12 +284,7 @@ async function submitApply(payload) {
   if (!company || !region || !addressDetail) {
     return fail('请填写完整资料', 'APPLY_FIELDS_REQUIRED');
   }
-  const wxContext = cloud.getWXContext();
-  const userRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
-  let user = userRes.data[0] || null;
-  if (!user) {
-    return fail('未找到当前登录用户', 'CURRENT_USER_NOT_FOUND');
-  }
+  let user = await requireCurrentCloudUser();
   const patch = {
     company,
     region,
@@ -280,12 +315,7 @@ async function saveAddress(payload) {
   if (!contactName || !phone || !region || !detail) {
     return fail('请填写完整地址', 'ADDRESS_FIELDS_REQUIRED');
   }
-  const wxContext = cloud.getWXContext();
-  const userRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
-  const user = userRes.data[0] || null;
-  if (!user) {
-    return fail('未找到当前登录用户', 'CURRENT_USER_NOT_FOUND');
-  }
+  const user = await requireCurrentCloudUser();
   const hasDefaultRes = await db.collection('addresses').where({ userId: user.id, isDefault: true }).count();
   const address = {
     id: nextId('addr'),
@@ -303,13 +333,17 @@ async function saveAddress(payload) {
 }
 
 async function listAddresses(payload) {
+  const currentUser = await requireCurrentCloudUser();
   const { userId } = payload;
-  if (!userId) return fail('缺少用户 ID', 'USER_ID_REQUIRED');
-  const res = await db.collection('addresses').where({ userId }).get();
+  if (userId && userId !== currentUser.id) {
+    throw new Error('ADDRESS_PERMISSION_DENIED');
+  }
+  const res = await db.collection('addresses').where({ userId: currentUser.id }).get();
   return ok(res.data);
 }
 
 async function listCustomers() {
+  await requireAdminCloudUser();
   const usersRes = await db.collection('users').where({ role: 'customer' }).limit(200).get();
   const ordersRes = await db.collection('orders').limit(500).get();
   const addressesRes = await db.collection('addresses').limit(500).get();
@@ -340,10 +374,7 @@ async function listCustomers() {
 async function reviewCustomer(payload) {
   const { id, status } = payload;
   if (!id || !status) return fail('缺少客户审核参数', 'REVIEW_PARAMS_REQUIRED');
-  const wxContext = cloud.getWXContext();
-  const reviewerRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
-  const reviewer = reviewerRes.data[0] || null;
-  if (!reviewer) return fail('未找到当前审核人', 'REVIEWER_NOT_FOUND');
+  const reviewer = await requireAdminCloudUser();
   const userRes = await db.collection('users').where({ id }).limit(1).get();
   const user = userRes.data[0] || null;
   if (!user) return fail('未找到客户', 'CUSTOMER_NOT_FOUND');
@@ -372,6 +403,7 @@ async function reviewCustomer(payload) {
 async function getCustomerDetail(payload) {
   const { id } = payload;
   if (!id) return fail('缺少客户 ID', 'CUSTOMER_ID_REQUIRED');
+  await requireAdminCloudUser();
   const userRes = await db.collection('users').where({ id }).limit(1).get();
   const customer = userRes.data[0] || null;
   if (!customer) return fail('未找到客户', 'CUSTOMER_NOT_FOUND');
@@ -412,10 +444,7 @@ async function createOrder(payload) {
   const { addressId, address, remark, items = [] } = payload;
   if (!items.length) return fail('请先选择商品', 'ORDER_ITEMS_REQUIRED');
 
-  const wxContext = cloud.getWXContext();
-  const userRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
-  const user = userRes.data[0] || null;
-  if (!user) return fail('未找到当前登录用户', 'CURRENT_USER_NOT_FOUND');
+  const user = await requireCurrentCloudUser();
 
   let addressSnapshot = address || null;
   if (addressId) {
@@ -515,9 +544,12 @@ async function createOrder(payload) {
 }
 
 async function listUserOrders(payload) {
+  const currentUser = await requireCurrentCloudUser();
   const { userId } = payload;
-  if (!userId) return fail('缺少用户 ID', 'USER_ID_REQUIRED');
-  const res = await db.collection('orders').where({ userId }).get();
+  if (userId && userId !== currentUser.id) {
+    throw new Error('ORDER_PERMISSION_DENIED');
+  }
+  const res = await db.collection('orders').where({ userId: currentUser.id }).get();
   const orders = res.data.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   const items = await listOrderItemsByOrderIds(orders.map((item) => item.id));
   return ok(attachItemsToOrders(orders, items));
@@ -526,9 +558,13 @@ async function listUserOrders(payload) {
 async function getOrderDetail(payload) {
   const { id } = payload;
   if (!id) return fail('缺少订单 ID', 'ORDER_ID_REQUIRED');
+  const currentUser = await requireCurrentCloudUser();
   const res = await db.collection('orders').where({ id }).limit(1).get();
   const order = res.data[0] || null;
   if (!order) return fail('订单不存在', 'ORDER_NOT_FOUND');
+  if (!isAdminRole(currentUser.role) && order.userId !== currentUser.id) {
+    throw new Error('ORDER_PERMISSION_DENIED');
+  }
   const itemRes = await db.collection('order_items').where({ orderId: id }).get();
   return ok({
     ...order,
@@ -539,9 +575,13 @@ async function getOrderDetail(payload) {
 async function confirmReceive(payload) {
   const { id } = payload;
   if (!id) return fail('缺少订单 ID', 'ORDER_ID_REQUIRED');
+  const currentUser = await requireCurrentCloudUser();
   const res = await db.collection('orders').where({ id }).limit(1).get();
   const order = res.data[0] || null;
   if (!order) return fail('订单不存在', 'ORDER_NOT_FOUND');
+  if (order.userId !== currentUser.id) {
+    throw new Error('ORDER_PERMISSION_DENIED');
+  }
   const patch = {
     status: 'completed',
     completedAt: nowText()
@@ -556,6 +596,7 @@ async function confirmReceive(payload) {
 }
 
 async function listAdminOrders() {
+  await requireAdminCloudUser();
   const res = await db.collection('orders').get();
   const orders = res.data.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   const items = await listOrderItemsByOrderIds(orders.map((item) => item.id));
@@ -565,6 +606,7 @@ async function listAdminOrders() {
 async function updateOrderStatus(payload) {
   const { id, nextStatus } = payload;
   if (!id || !nextStatus) return fail('缺少订单状态参数', 'ORDER_STATUS_PARAMS_REQUIRED');
+  const operator = await requireAdminCloudUser();
   const orderRes = await db.collection('orders').where({ id }).limit(1).get();
   const order = orderRes.data[0] || null;
   if (!order) return fail('订单不存在', 'ORDER_NOT_FOUND');
@@ -613,8 +655,8 @@ async function updateOrderStatus(payload) {
   await db.collection('operation_logs').add({
     data: {
       id: nextId('op'),
-      operatorId: '',
-      operatorName: '后台',
+      operatorId: operator.id,
+      operatorName: operator.nickName,
       type: 'order_status',
       target: order.orderNo,
       summary: `订单状态改为${({
@@ -638,208 +680,211 @@ async function updateOrderStatus(payload) {
 exports.main = async (event) => {
   const { action, payload = {} } = event;
 
-  if (action === 'ping') {
-    return ok({ time: Date.now() });
-  }
+  try {
+    if (action === 'ping') {
+      return ok({ time: Date.now() });
+    }
 
-  if (action === 'authLoginByPhone') {
-    return loginByPhone(payload);
-  }
+    if (action === 'authLoginByPhone') {
+      return loginByPhone(payload);
+    }
 
-  if (action === 'authGetCurrentUser') {
-    return getCurrentUser(payload);
-  }
+    if (action === 'authGetCurrentUser') {
+      return getCurrentUser(payload);
+    }
 
-  if (action === 'listProducts') {
-    return listProducts(payload);
-  }
+    if (action === 'listProducts') {
+      return listProducts(payload);
+    }
 
-  if (action === 'listAdminProducts') {
-    return listAdminProducts(payload);
-  }
+    if (action === 'listAdminProducts') {
+      return listAdminProducts(payload);
+    }
 
-  if (action === 'listCategories') {
-    return listCategories(payload);
-  }
+    if (action === 'listCategories') {
+      return listCategories(payload);
+    }
 
-  if (action === 'getProduct') {
-    return getProduct(payload);
-  }
+    if (action === 'getProduct') {
+      return getProduct(payload);
+    }
 
-  if (action === 'getHomeContent') {
-    return getHomeContent(payload);
-  }
+    if (action === 'getHomeContent') {
+      return getHomeContent(payload);
+    }
 
-  if (action === 'listCartItems') {
-    return listCartItems(payload);
-  }
+    if (action === 'listCartItems') {
+      return listCartItems(payload);
+    }
 
-  if (action === 'addToCart') {
-    return addToCart(payload);
-  }
+    if (action === 'addToCart') {
+      return addToCart(payload);
+    }
 
-  if (action === 'updateCartQuantity') {
-    return updateCartQuantity(payload);
-  }
+    if (action === 'updateCartQuantity') {
+      return updateCartQuantity(payload);
+    }
 
-  if (action === 'submitApply') {
-    return submitApply(payload);
-  }
+    if (action === 'submitApply') {
+      return submitApply(payload);
+    }
 
-  if (action === 'saveAddress') {
-    return saveAddress(payload);
-  }
+    if (action === 'saveAddress') {
+      return saveAddress(payload);
+    }
 
-  if (action === 'listAddresses') {
-    return listAddresses(payload);
-  }
+    if (action === 'listAddresses') {
+      return listAddresses(payload);
+    }
 
-  if (action === 'listCustomers') {
-    return listCustomers(payload);
-  }
+    if (action === 'listCustomers') {
+      return listCustomers(payload);
+    }
 
-  if (action === 'reviewCustomer') {
-    return reviewCustomer(payload);
-  }
+    if (action === 'reviewCustomer') {
+      return reviewCustomer(payload);
+    }
 
-  if (action === 'getCustomerDetail') {
-    return getCustomerDetail(payload);
-  }
+    if (action === 'getCustomerDetail') {
+      return getCustomerDetail(payload);
+    }
 
-  if (action === 'createOrder') {
-    return createOrder(payload);
-  }
+    if (action === 'createOrder') {
+      return createOrder(payload);
+    }
 
-  if (action === 'listUserOrders') {
-    return listUserOrders(payload);
-  }
+    if (action === 'listUserOrders') {
+      return listUserOrders(payload);
+    }
 
-  if (action === 'getOrderDetail') {
-    return getOrderDetail(payload);
-  }
+    if (action === 'getOrderDetail') {
+      return getOrderDetail(payload);
+    }
 
-  if (action === 'confirmReceive') {
-    return confirmReceive(payload);
-  }
+    if (action === 'confirmReceive') {
+      return confirmReceive(payload);
+    }
 
-  if (action === 'listAdminOrders') {
-    return listAdminOrders(payload);
-  }
+    if (action === 'listAdminOrders') {
+      return listAdminOrders(payload);
+    }
 
-  if (action === 'updateOrderStatus') {
-    return updateOrderStatus(payload);
-  }
+    if (action === 'updateOrderStatus') {
+      return updateOrderStatus(payload);
+    }
 
-  if (action === 'createAudit') {
-    const wxContext = cloud.getWXContext();
-    const userRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
-    const user = userRes.data[0] || null;
-    const audit = {
-      id: nextId('audit'),
-      type: payload.type,
-      targetCollection: payload.targetCollection,
-      targetId: payload.targetId,
-      submitterId: user ? user.id : '',
-      submitterName: user ? user.nickName : '系统',
-      submittedAt: nowText(),
-      status: 'pending',
-      reviewerId: '',
-      reviewerName: '',
-      reviewedAt: '',
-      beforeData: payload.beforeData || null,
-      afterData: payload.afterData || null,
-      summary: payload.summary || '',
-      rejectReason: ''
-    };
-    await db.collection('audit_logs').add({ data: audit });
-    return ok(audit);
-  }
+    if (action === 'createAudit') {
+      const user = await requireAdminCloudUser();
+      const audit = {
+        id: nextId('audit'),
+        type: payload.type,
+        targetCollection: payload.targetCollection,
+        targetId: payload.targetId,
+        submitterId: user.id,
+        submitterName: user.nickName,
+        submittedAt: nowText(),
+        status: 'pending',
+        reviewerId: '',
+        reviewerName: '',
+        reviewedAt: '',
+        beforeData: payload.beforeData || null,
+        afterData: payload.afterData || null,
+        summary: payload.summary || '',
+        rejectReason: ''
+      };
+      await db.collection('audit_logs').add({ data: audit });
+      return ok(audit);
+    }
 
-  if (action === 'listAudits') {
-    const res = await db.collection('audit_logs').get();
-    return ok(res.data.sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt))));
-  }
+    if (action === 'listAudits') {
+      await requireAdminCloudUser();
+      const res = await db.collection('audit_logs').get();
+      return ok(res.data.sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt))));
+    }
 
-  if (action === 'reviewAudit') {
-    const { id, action: reviewAction, rejectReason } = payload;
-    if (!id || !reviewAction) return fail('缺少审核参数', 'AUDIT_PARAMS_REQUIRED');
-    const wxContext = cloud.getWXContext();
-    const reviewerRes = await db.collection('users').where({ openid: wxContext.OPENID }).limit(1).get();
-    const reviewer = reviewerRes.data[0] || null;
-    if (!reviewer || reviewer.role !== 'super_admin') return fail('仅超级管理员可审核', 'AUDIT_PERMISSION_DENIED');
-    const auditRes = await db.collection('audit_logs').where({ id }).limit(1).get();
-    const audit = auditRes.data[0] || null;
-    if (!audit) return fail('审核记录不存在', 'AUDIT_NOT_FOUND');
-    if (audit.status !== 'pending') return fail('该审核已处理', 'AUDIT_ALREADY_REVIEWED');
+    if (action === 'reviewAudit') {
+      const { id, action: reviewAction, rejectReason } = payload;
+      if (!id || !reviewAction) return fail('缺少审核参数', 'AUDIT_PARAMS_REQUIRED');
+      const reviewer = await requireSuperAdminCloudUser();
+      const auditRes = await db.collection('audit_logs').where({ id }).limit(1).get();
+      const audit = auditRes.data[0] || null;
+      if (!audit) return fail('审核记录不存在', 'AUDIT_NOT_FOUND');
+      if (audit.status !== 'pending') return fail('该审核已处理', 'AUDIT_ALREADY_REVIEWED');
 
-    if (reviewAction === 'approve') {
-      if (audit.targetCollection === 'products') {
-        if (audit.type === 'product_create') {
-          const productData = {
-            id: nextId('p'),
-            ...audit.afterData,
-            createdAt: nowText(),
-            updatedAt: nowText()
-          };
-          await db.collection('products').add({ data: productData });
-        } else {
-          const productRes = await db.collection('products').where({ id: audit.targetId }).limit(1).get();
-          const product = productRes.data[0] || null;
-          if (product) {
-            await db.collection('products').doc(product._id).update({
+      if (reviewAction === 'approve') {
+        if (audit.targetCollection === 'products') {
+          if (audit.type === 'product_create') {
+            const productData = {
+              id: nextId('p'),
+              ...audit.afterData,
+              createdAt: nowText(),
+              updatedAt: nowText()
+            };
+            await db.collection('products').add({ data: productData });
+          } else {
+            const productRes = await db.collection('products').where({ id: audit.targetId }).limit(1).get();
+            const product = productRes.data[0] || null;
+            if (product) {
+              await db.collection('products').doc(product._id).update({
+                data: {
+                  ...audit.afterData,
+                  updatedAt: nowText()
+                }
+              });
+            }
+          }
+        }
+        if (audit.targetCollection === 'home_contents' || audit.targetCollection === 'homeContent') {
+          const homeRes = await db.collection('home_contents').where({ id: 'home_content' }).limit(1).get();
+          const home = homeRes.data[0] || null;
+          if (home) {
+            await db.collection('home_contents').doc(home._id).update({
               data: {
                 ...audit.afterData,
-                updatedAt: nowText()
+                updatedAt: nowText(),
+                updatedBy: reviewer.id
               }
             });
           }
         }
       }
-      if (audit.targetCollection === 'home_contents' || audit.targetCollection === 'homeContent') {
-        const homeRes = await db.collection('home_contents').where({ id: 'home_content' }).limit(1).get();
-        const home = homeRes.data[0] || null;
-        if (home) {
-          await db.collection('home_contents').doc(home._id).update({
-            data: {
-              ...audit.afterData,
-              updatedAt: nowText(),
-              updatedBy: reviewer.id
-            }
-          });
-        }
-      }
-    }
 
-    const patch = {
-      status: reviewAction === 'approve' ? 'approved' : 'rejected',
-      reviewerId: reviewer.id,
-      reviewerName: reviewer.nickName,
-      reviewedAt: nowText(),
-      rejectReason: reviewAction === 'reject' ? (rejectReason || '后台拒绝') : ''
-    };
-    await db.collection('audit_logs').doc(audit._id).update({ data: patch });
-    return ok({
-      ...audit,
-      ...patch
-    });
-  }
-
-  if (action === 'updateSettlementStatus') {
-    const { ids = [], status } = payload;
-    if (!Array.isArray(ids) || !ids.length || !status) return fail('缺少结算状态参数', 'SETTLEMENT_PARAMS_REQUIRED');
-    const ordersRes = await Promise.all(ids.map((id) => db.collection('orders').where({ id }).limit(1).get()));
-    for (const orderRes of ordersRes) {
-      const order = orderRes.data[0] || null;
-      if (!order) continue;
-      await db.collection('orders').doc(order._id).update({
-        data: {
-          settlementStatus: status,
-          updatedAt: nowText()
-        }
+      const patch = {
+        status: reviewAction === 'approve' ? 'approved' : 'rejected',
+        reviewerId: reviewer.id,
+        reviewerName: reviewer.nickName,
+        reviewedAt: nowText(),
+        rejectReason: reviewAction === 'reject' ? (rejectReason || '后台拒绝') : ''
+      };
+      await db.collection('audit_logs').doc(audit._id).update({ data: patch });
+      return ok({
+        ...audit,
+        ...patch
       });
     }
-    return ok({ ids, status });
-  }
 
-  return fail(`Unknown action: ${action}`, 'UNKNOWN_ACTION');
+    if (action === 'updateSettlementStatus') {
+      const { ids = [], status } = payload;
+      if (!Array.isArray(ids) || !ids.length || !status) return fail('缺少结算状态参数', 'SETTLEMENT_PARAMS_REQUIRED');
+      await requireAdminCloudUser();
+      const ordersRes = await Promise.all(ids.map((id) => db.collection('orders').where({ id }).limit(1).get()));
+      for (const orderRes of ordersRes) {
+        const order = orderRes.data[0] || null;
+        if (!order) continue;
+        await db.collection('orders').doc(order._id).update({
+          data: {
+            settlementStatus: status,
+            updatedAt: nowText()
+          }
+        });
+      }
+      return ok({ ids, status });
+    }
+
+    return fail(`Unknown action: ${action}`, 'UNKNOWN_ACTION');
+  } catch (error) {
+    const permissionResult = mapPermissionError(error);
+    if (permissionResult) return permissionResult;
+    throw error;
+  }
 };

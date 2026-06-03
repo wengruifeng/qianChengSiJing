@@ -135,9 +135,39 @@
 - 后台取消订单时释放锁定库存
 - 对账中心更新结算状态时需要管理员权限
 
+## 当前代码里已补上的关键权限点
+
+当前代码已经在云函数中补上了第一批最敏感的权限校验：
+
+- 管理端接口角色校验：
+  - `listAdminProducts`
+  - `listCustomers`
+  - `reviewCustomer`
+  - `getCustomerDetail`
+  - `listAdminOrders`
+  - `updateOrderStatus`
+  - `createAudit`
+  - `listAudits`
+  - `updateSettlementStatus`
+- 超级管理员专属审核：
+  - `reviewAudit`
+- 用户数据归属校验：
+  - `listCartItems`
+  - `addToCart`
+  - `updateCartQuantity`
+  - `submitApply`
+  - `saveAddress`
+  - `listAddresses`
+  - `createOrder`
+  - `listUserOrders`
+  - `getOrderDetail`
+  - `confirmReceive`
+
+这些接口现在不再只依赖前端入口控制，而是会在云函数内根据 `openid`、`role` 和数据归属做判断。
+
 ## 当前代码里还建议继续补的权限点
 
-虽然现在大部分逻辑已经搬到云函数，但从“上线安全”角度看，建议继续补这些校验：
+虽然现在第一批敏感逻辑已经搬到云函数并加了校验，但从“上线安全”角度看，仍建议继续补这些点：
 
 ### 1. 管理端接口角色校验加强
 
@@ -216,7 +246,7 @@
 
 ## 当前最建议马上补的接口校验
 
-如果只先补最值得补的四项，我建议优先：
+如果只看第一批最值得补的四项，当前已经优先完成了：
 
 1. `listAdminOrders`
 2. `updateOrderStatus`

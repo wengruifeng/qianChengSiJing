@@ -269,3 +269,33 @@
   - 明确云函数角色与归属校验边界
 - 更新 `README.md` 与 `DELIVERY_CHECKLIST.md`
   - 将项目阶段从“接云中”推进到“已可联调，进入收口阶段”
+
+### 云函数权限收口
+
+- 收紧 `cloudfunctions/api/index.js` 的敏感接口权限：
+  - 新增基于 `openid` 的当前用户识别助手
+  - 新增管理员 / 超级管理员权限助手
+  - 新增统一权限错误映射
+- 已在云函数内补上角色校验的接口：
+  - `listAdminProducts`
+  - `listCustomers`
+  - `reviewCustomer`
+  - `getCustomerDetail`
+  - `listAdminOrders`
+  - `updateOrderStatus`
+  - `createAudit`
+  - `listAudits`
+  - `updateSettlementStatus`
+- 已在云函数内补上归属校验的接口：
+  - `listCartItems`
+  - `addToCart`
+  - `updateCartQuantity`
+  - `submitApply`
+  - `saveAddress`
+  - `listAddresses`
+  - `createOrder`
+  - `listUserOrders`
+  - `getOrderDetail`
+  - `confirmReceive`
+- `reviewAudit` 统一改为超级管理员助手校验。
+- 后台改订单状态时，操作记录现在会写入真实操作者 ID 和昵称，而不是固定“后台”。
