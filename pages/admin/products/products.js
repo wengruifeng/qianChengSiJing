@@ -1,6 +1,6 @@
-const { getStore } = require('../../../utils/store');
 const { createAudit } = require('../../../utils/audit-service');
 const { fetchAdminProducts, fetchCategories } = require('../../../utils/catalog-service');
+const { getCurrentUser, isAdmin, refreshCurrentUser } = require('../../../utils/auth');
 
 Page({
   data: {
@@ -17,7 +17,17 @@ Page({
   },
 
   onShow() {
-    this.refresh();
+    refreshCurrentUser().then((user) => {
+      if (!isAdmin(user)) {
+        wx.showToast({ title: '后台权限已失效', icon: 'none' });
+        wx.navigateBack();
+        return;
+      }
+      this.refresh();
+    }).catch(() => {
+      wx.showToast({ title: '权限校验失败', icon: 'none' });
+      wx.navigateBack();
+    });
   },
 
   refresh() {
@@ -38,8 +48,12 @@ Page({
         saleStatusText: item.saleStatus === 'on' ? '在售' : '下架'
       }));
       this.setData({ products });
-    }).catch(() => {
+    }).catch((error) => {
       this.setData({ products: [] });
+      wx.showToast({
+        title: error && error.message ? error.message : '商品数据加载失败',
+        icon: 'none'
+      });
     });
   },
 
@@ -61,7 +75,15 @@ Page({
   },
 
   requestDelete(event) {
-    const product = getStore().products.find((item) => item.id === event.currentTarget.dataset.id);
+    if (!isAdmin(getCurrentUser())) {
+      wx.showToast({ title: '无后台权限', icon: 'none' });
+      return;
+    }
+    const product = this.data.products.find((item) => item.id === event.currentTarget.dataset.id);
+    if (!product) {
+      wx.showToast({ title: '未找到商品数据', icon: 'none' });
+      return;
+    }
     createAudit({
       type: 'product_delete',
       targetCollection: 'products',

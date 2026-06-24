@@ -12,10 +12,12 @@
     "pages/apply/apply",
     "pages/address/address",
     "pages/agreement/agreement",
+    "pages/agreement-detail/agreement-detail",
     "pages/message-settings/message-settings",
     "pages/admin/dashboard/dashboard",
     "pages/admin/products/products",
     "pages/admin/product-edit/product-edit",
+    "pages/admin/categories/categories",
     "pages/admin/orders/orders",
     "pages/admin/reconcile/reconcile",
     "pages/admin/customers/customers",
@@ -28,7 +30,7 @@
     "pages/admin/import-export/import-export"
   ],
   "window": {
-    "navigationBarTitleText": "前呈似景供应链",
+    "navigationBarTitleText": "前呈似景智链",
     "navigationBarBackgroundColor": "#e8f5ff",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#f3f6fb"
@@ -60,3 +62,4 @@
   "style": "v2",
   "lazyCodeLoading": "requiredComponents"
 }
+

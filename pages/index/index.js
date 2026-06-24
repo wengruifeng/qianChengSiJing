@@ -1,4 +1,4 @@
-const { canSeePrice } = require('../../utils/auth');
+const { canSeePrice, goLoginOrApply, refreshCurrentUser } = require('../../utils/auth');
 const { fetchCategories, fetchHomeContent, fetchVisibleProducts } = require('../../utils/catalog-service');
 const { selectProducts } = require('../../utils/content');
 
@@ -13,10 +13,11 @@ Page({
 
   onShow() {
     Promise.all([
+      refreshCurrentUser(),
       fetchCategories(),
       fetchVisibleProducts(),
       fetchHomeContent()
-    ]).then(([categories, visibleProducts, home]) => {
+    ]).then(([, categories, visibleProducts, home]) => {
       this.setData({
         categories: categories.map((item) => ({ ...item, initial: item.name.substring(0, 1) })),
         recommendedProducts: selectProducts(
@@ -56,7 +57,7 @@ Page({
   },
 
   goApply() {
-    wx.navigateTo({ url: '/pages/apply/apply' });
+    goLoginOrApply();
   },
 
   scanCode() {

@@ -2,7 +2,7 @@
 
 ## 设计说明
 
-- 当前项目仍保留本地 mock 数据作为兜底与演示数据源。
+- 当前项目已切到严格云联调模式，页面联调时不再依赖本地 mock 兜底。
 - 云数据库接入时，以本文件作为集合和字段的主参考。
 - 第一版遵循“订单主表 + 订单商品明细表”的结构，不把订单商品仅仅内嵌在 `orders` 中。
 
@@ -79,7 +79,9 @@
 - `simple`
 - `categoryId`
 - `mainImage`
+- `mainImageFileId`
 - `detailImages`
+- `detailImageFileIds`
 - `spec`
 - `unit`
 - `price`
@@ -200,12 +202,19 @@
 首页内容配置表。
 
 - `id`
+- `storeName`
+- `businessStatus`
+- `industryScope`
+- `operationMode`
 - `bannerTitle`
 - `notice`
 - `servicePhone`
 - `heroImage`
+- `heroImageFileId`
 - `topicImage`
+- `topicImageFileId`
 - `logoImage`
+- `logoImageFileId`
 - `recommendedProductIds`
 - `newProductIds`
 - `updatedAt`

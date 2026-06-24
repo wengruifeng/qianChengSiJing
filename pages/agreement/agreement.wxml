@@ -1,6 +1,10 @@
 <view class="page">
+  <view class="card intro">
+    <view class="intro-title">协议及说明</view>
+    <view class="intro-sub">请在使用前阅读用户协议与隐私协议，了解服务规则与信息保护方式。</view>
+  </view>
   <view class="card menu">
-    <view>用户协议 <text>›</text></view>
-    <view>隐私协议 <text>›</text></view>
+    <view bindtap="openUserAgreement">用户协议 <text>›</text></view>
+    <view bindtap="openPrivacyAgreement">隐私协议 <text>›</text></view>
   </view>
 </view>

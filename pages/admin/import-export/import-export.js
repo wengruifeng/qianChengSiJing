@@ -1,5 +1,6 @@
-const { getStore } = require('../../../utils/store');
-const { createAudit } = require('../../../utils/business');
+const { fetchAdminProducts } = require('../../../utils/catalog-service');
+const { fetchCustomers } = require('../../../utils/customer-service');
+const { fetchAdminOrders } = require('../../../utils/order-service');
 
 Page({
   data: {
@@ -11,34 +12,45 @@ Page({
   },
 
   onShow() {
-    const store = getStore();
-    this.setData({
-      exportItems: [
-        { key: 'products', name: '商品列表', count: store.products.length },
-        { key: 'customers', name: '客户列表', count: store.users.filter((item) => item.role === 'customer').length },
-        { key: 'orders', name: '订单列表', count: store.orders.length },
-        { key: 'stats', name: '统计报表', count: 1 }
-      ]
+    Promise.all([
+      fetchAdminProducts(),
+      fetchCustomers(),
+      fetchAdminOrders()
+    ]).then(([products, customers, orders]) => {
+      this.setData({
+        exportItems: [
+          { key: 'products', name: '商品列表', count: products.length },
+          { key: 'customers', name: '客户列表', count: customers.length },
+          { key: 'orders', name: '订单列表', count: orders.length },
+          { key: 'stats', name: '统计报表', count: 1 }
+        ]
+      });
+    }).catch(() => {
+      this.setData({
+        exportItems: [
+          { key: 'products', name: '商品列表', count: 0 },
+          { key: 'customers', name: '客户列表', count: 0 },
+          { key: 'orders', name: '订单列表', count: 0 },
+          { key: 'stats', name: '统计报表', count: 0 }
+        ]
+      });
     });
   },
 
-  mockImport() {
-    createAudit('import_products', 'products', '', null, { rows: 1 }, '导入商品数据');
-    wx.showToast({ title: '已生成审核' });
+  requestImport() {
+    wx.showModal({
+      title: '导入说明',
+      content: '当前页面可查看商品和客户导入字段说明，导入文件请按统一模板整理后再执行导入流程。',
+      showCancel: false
+    });
   },
 
   exportData(event) {
     const type = event.currentTarget.dataset.type;
-    const store = getStore();
-    const countMap = {
-      products: store.products.length,
-      customers: store.users.length,
-      orders: store.orders.length,
-      stats: 1
-    };
+    const countMap = Object.fromEntries((this.data.exportItems || []).map((item) => [item.key, item.count]));
     wx.showModal({
       title: '导出预览',
-      content: `${type} 可导出 ${countMap[type]} 条数据。正式版将生成 CSV 文件。`,
+      content: `${type} 当前可导出 ${countMap[type]} 条数据。`,
       showCancel: false
     });
   },

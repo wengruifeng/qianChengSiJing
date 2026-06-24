@@ -1,4 +1,4 @@
-const { canSeePrice, requireLogin } = require('../../utils/auth');
+const { canSeePrice, goLoginOrApply, refreshCurrentUser, requireLogin } = require('../../utils/auth');
 const { addToCart } = require('../../utils/cart-service');
 const { fetchCategories, fetchVisibleProducts } = require('../../utils/catalog-service');
 
@@ -19,9 +19,10 @@ Page({
 
   onShow() {
     Promise.all([
+      refreshCurrentUser(),
       fetchCategories(),
       fetchVisibleProducts()
-    ]).then(([categories, products]) => {
+    ]).then(([, categories, products]) => {
       this.setData({
         categories,
         products,
@@ -64,7 +65,7 @@ Page({
   addCart(event) {
     if (!requireLogin('/pages/catalog/catalog')) return;
     if (!this.data.canSeePrice) {
-      wx.navigateTo({ url: '/pages/apply/apply' });
+      goLoginOrApply();
       return;
     }
     addToCart(event.currentTarget.dataset.id, 1).then((result) => {
@@ -78,7 +79,7 @@ Page({
   },
 
   goApply() {
-    wx.navigateTo({ url: '/pages/apply/apply' });
+    goLoginOrApply();
   },
 
   scanCode() {

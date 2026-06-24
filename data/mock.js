@@ -1,7 +1,7 @@
 module.exports = {
   admins: [
-    { id: 'admin_001', phone: '13800000000', role: 'super_admin', status: 'enabled', createdAt: '2026-05-18 12:00' },
-    { id: 'admin_002', phone: '13900000000', role: 'admin', status: 'enabled', createdAt: '2026-05-18 12:00' }
+    { id: 'admin_001', phone: '13800000000', role: 'super_admin', status: 'enabled', deleteStatus: 'normal', protected: true, name: '特殊超级管理员', remark: '', createdAt: '2026-05-18 12:00' },
+    { id: 'admin_002', phone: '13900000000', role: 'admin', status: 'enabled', deleteStatus: 'normal', protected: false, name: '管理员', remark: '', createdAt: '2026-05-18 12:00' }
   ],
   users: [
     {
@@ -12,9 +12,9 @@ module.exports = {
       avatar: '',
       role: 'super_admin',
       customerStatus: 'approved',
-      company: '前呈似景供应链',
+      company: '前呈似景智链',
       region: '四川省 成都市',
-      addressDetail: '前呈似景供应链仓配中心',
+      addressDetail: '前呈似景智链仓配中心',
       remark: '',
       createdAt: '2026-05-18 12:00'
     },
@@ -26,9 +26,9 @@ module.exports = {
       avatar: '',
       role: 'admin',
       customerStatus: 'approved',
-      company: '前呈似景供应链',
+      company: '前呈似景智链',
       region: '四川省 成都市',
-      addressDetail: '前呈似景供应链仓配中心',
+      addressDetail: '前呈似景智链仓配中心',
       remark: '',
       createdAt: '2026-05-18 12:00'
     },
@@ -427,7 +427,7 @@ module.exports = {
   ],
   homeContent: {
     bannerTitle: '专注火锅串串食材',
-    notice: '欢迎光临前呈似景供应链商城，如遇货品搜索不到请联系客服：13243592231',
+    notice: '欢迎光临前呈似景智链商城，如遇货品搜索不到请联系客服：13243592231',
     servicePhone: '13243592231',
     heroImage: '/assets/temp/home-hero.jpg',
     topicImage: '/assets/temp/topic-new.jpg',
@@ -490,7 +490,7 @@ module.exports = {
   orders: [
     {
       id: 'order_001',
-      orderNo: 'QCSJ20260514001',
+      orderNo: 'QCSJZL20260514001',
       userId: 'user_customer',
       customerName: '小巷串串',
       customerPhone: '13700000000',
@@ -528,7 +528,7 @@ module.exports = {
     },
     {
       id: 'order_002',
-      orderNo: 'QCSJ20260518002',
+      orderNo: 'QCSJZL20260518002',
       userId: 'user_customer',
       customerName: '小巷串串',
       customerPhone: '13700000000',
@@ -566,7 +566,7 @@ module.exports = {
     },
     {
       id: 'order_003',
-      orderNo: 'QCSJ20260519003',
+      orderNo: 'QCSJZL20260519003',
       userId: 'user_customer_2',
       customerName: '江边火锅',
       customerPhone: '13600000000',
@@ -615,7 +615,7 @@ module.exports = {
     },
     {
       id: 'order_004',
-      orderNo: 'QCSJ20260520004',
+      orderNo: 'QCSJZL20260520004',
       userId: 'user_customer',
       customerName: '小巷串串',
       customerPhone: '13700000000',
@@ -653,7 +653,7 @@ module.exports = {
     },
     {
       id: 'order_005',
-      orderNo: 'QCSJ20260520005',
+      orderNo: 'QCSJZL20260520005',
       userId: 'user_customer_2',
       customerName: '江边火锅',
       customerPhone: '13600000000',
@@ -691,7 +691,7 @@ module.exports = {
     },
     {
       id: 'order_006',
-      orderNo: 'QCSJ20260521006',
+      orderNo: 'QCSJZL20260521006',
       userId: 'user_customer',
       customerName: '小巷串串',
       customerPhone: '13700000000',
@@ -729,7 +729,7 @@ module.exports = {
     },
     {
       id: 'order_007',
-      orderNo: 'QCSJ20260521007',
+      orderNo: 'QCSJZL20260521007',
       userId: 'user_customer_2',
       customerName: '江边火锅',
       customerPhone: '13600000000',
@@ -789,7 +789,7 @@ module.exports = {
     },
     {
       id: 'order_008',
-      orderNo: 'QCSJ20260522008',
+      orderNo: 'QCSJZL20260522008',
       userId: 'user_customer',
       customerName: '小巷串串',
       customerPhone: '13700000000',
@@ -827,7 +827,7 @@ module.exports = {
     },
     {
       id: 'order_009',
-      orderNo: 'QCSJ20260523009',
+      orderNo: 'QCSJZL20260523009',
       userId: 'user_customer_5',
       customerName: '蜀味里火锅串串(高新大源旗舰店)',
       customerPhone: '13300000000',
@@ -898,7 +898,7 @@ module.exports = {
     },
     {
       id: 'order_010',
-      orderNo: 'QCSJ20260524010',
+      orderNo: 'QCSJZL20260524010',
       userId: 'user_customer_5',
       customerName: '蜀味里火锅串串(高新大源旗舰店)',
       customerPhone: '13300000000',
@@ -989,7 +989,7 @@ module.exports = {
       reviewerName: '超级管理员',
       reviewedAt: '2026-05-23 14:18',
       beforeData: {
-        notice: '欢迎光临前呈似景供应链商城，如遇货品搜索不到请联系客服：13243592231'
+        notice: '欢迎光临前呈似景智链商城，如遇货品搜索不到请联系客服：13243592231'
       },
       afterData: {
         notice: '新品海鲜和鲜切本周已上新，如需整件采购请联系客服：13243592231'
@@ -1059,3 +1059,4 @@ module.exports = {
     }
   ]
 };
+

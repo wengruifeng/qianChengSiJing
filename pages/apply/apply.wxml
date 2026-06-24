@@ -1,6 +1,6 @@
 <view class="apply">
   <view class="heading">
-    <view>前呈似景供应链</view>
+    <view>前呈似景智链</view>
     <text>期待和您成为合作伙伴</text>
   </view>
   <view class="form-card">
@@ -21,3 +21,4 @@
   <button wx:if="{{user && user.customerStatus === 'approved'}}" class="save-address" bindtap="saveDefaultAddress">保存为默认收货地址</button>
   <button class="submit" bindtap="submit">提交申请</button>
 </view>
+

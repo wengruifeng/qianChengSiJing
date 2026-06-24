@@ -1,4 +1,4 @@
-const { getCurrentUser, canSeePrice } = require('../../utils/auth');
+const { getCurrentUser, canSeePrice, refreshCurrentUser } = require('../../utils/auth');
 const { fetchCartItems, updateCartQuantity } = require('../../utils/cart-service');
 const { fetchAddressesByCurrentUser } = require('../../utils/customer-service');
 const { submitOrder } = require('../../utils/order-service');
@@ -16,7 +16,8 @@ Page({
   },
 
   loadPageData() {
-    const user = getCurrentUser();
+    refreshCurrentUser().then(() => {
+      const user = getCurrentUser();
     if (!user || !canSeePrice()) {
       wx.showToast({ title: '暂无选购权限', icon: 'none' });
       setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) }), 300);
@@ -33,6 +34,7 @@ Page({
       this.setData({ items, address, total: total.toFixed(2) });
     }).catch(() => {
       this.setData({ items: [], address: null, total: '0.00' });
+    });
     });
   },
 

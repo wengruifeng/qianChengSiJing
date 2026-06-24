@@ -19,6 +19,12 @@
     <view class="block-title">商品描述</view>
     <view class="muted">{{product.description}}</view>
   </view>
+  <view class="detail-section card" wx:if="{{detailImages.length}}">
+    <view class="block-title">详情图片</view>
+    <view class="detail-list">
+      <image wx:for="{{detailImages}}" wx:key="*this" class="detail-photo" src="{{item}}" mode="widthFix"></image>
+    </view>
+  </view>
   <view class="bottom" wx:if="{{canSeePrice}}">
     <button class="btn-ghost" bindtap="goCart">选购</button>
     <button class="btn-primary" bindtap="addCart" disabled="{{isSoldOut}}">{{isSoldOut ? '已售罄' : '加入选购'}}</button>

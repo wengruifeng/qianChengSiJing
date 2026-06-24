@@ -12,7 +12,7 @@
   <view class="hero">
     <image class="hero-img" src="{{home.heroImage}}" mode="aspectFill"></image>
     <view class="hero-text">
-      <view class="hero-brand">前呈似景供应链</view>
+      <view class="hero-brand">{{home.storeName || '前呈似景智链'}}</view>
       <view class="hero-title">{{home.bannerTitle}}</view>
       <view class="hero-phone">TEL: {{home.servicePhone}}</view>
     </view>
@@ -78,3 +78,4 @@
     <button bindtap="goApply">申请查看</button>
   </view>
 </view>
+

@@ -30,10 +30,11 @@
     <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/orders/orders"><view class="admin-grid-icon orange"></view><text>订单管理</text></view>
     <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/reconcile/reconcile"><view class="admin-grid-icon red"></view><text>对账中心</text></view>
     <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/audits/audits"><view class="admin-grid-icon green"></view><text>审核中心</text></view>
+    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/categories/categories"><view class="admin-grid-icon green"></view><text>分类管理</text></view>
     <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/stats/stats"><view class="admin-grid-icon yellow"></view><text>数据统计</text></view>
     <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/settings/settings"><view class="admin-grid-icon blue"></view><text>店铺设置</text></view>
-    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/home-content/home-content"><view class="admin-grid-icon green"></view><text>首页内容</text></view>
-    <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/admins/admins"><view class="admin-grid-icon blue"></view><text>管理员</text></view>
+    <view wx:if="{{isRootAdmin}}" class="admin-grid-item" bindtap="go" data-url="/pages/admin/admins/admins?role=admin"><view class="admin-grid-icon blue"></view><text>管理员管理</text></view>
+    <view wx:if="{{isRootAdmin}}" class="admin-grid-item" bindtap="go" data-url="/pages/admin/admins/admins?role=super_admin"><view class="admin-grid-icon blue"></view><text>超级管理员</text></view>
     <view class="admin-grid-item" bindtap="go" data-url="/pages/admin/import-export/import-export"><view class="admin-grid-icon orange"></view><text>导入导出</text></view>
   </view>
 </view>

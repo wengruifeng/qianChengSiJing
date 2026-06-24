@@ -1,21 +1,6 @@
-const { callCloud, canUseCloud } = require('./cloud');
-const { runtime } = require('./config');
+const { cloudFirst } = require('./cloud');
 const { getStore } = require('./store');
 const { enrichProduct } = require('./content');
-
-function cloudFirst(action, payload, fallback) {
-  if (runtime.mode === 'cloud-first' && canUseCloud()) {
-    return callCloud(action, payload).then((res) => {
-      if (res.ok) return res.data;
-      if (runtime.fallbackToMock) return fallback();
-      throw new Error(res.message || `${action} failed`);
-    }).catch((error) => {
-      if (runtime.fallbackToMock) return fallback();
-      throw error;
-    });
-  }
-  return Promise.resolve(fallback());
-}
 
 function fetchCategories() {
   return cloudFirst('listCategories', {}, () => {

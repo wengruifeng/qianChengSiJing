@@ -3,6 +3,13 @@ const cloud = require('wx-server-sdk');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
 const db = cloud.database();
+const _ = db.command;
+const DEV_PHONE_LOGIN_ENABLED = true;
+
+const BOOTSTRAP_ADMIN_MAP = {
+  '13800000000': { id: 'bootstrap_super_admin', phone: '13800000000', role: 'super_admin', status: 'enabled', deleteStatus: 'normal', protected: true, name: '特殊超级管理员' },
+  '13900000000': { id: 'bootstrap_admin', phone: '13900000000', role: 'admin', status: 'enabled', deleteStatus: 'normal', protected: false, name: '管理员' }
+};
 
 function ok(data = {}) {
   return { ok: true, data };
@@ -13,8 +20,13 @@ function fail(message, code = 'UNKNOWN_ERROR') {
 }
 
 async function findAdminByPhone(phone) {
-  const res = await db.collection('admins').where({ phone, status: 'enabled' }).limit(1).get();
-  return res.data[0] || null;
+  try {
+    const res = await db.collection('admins').where({ phone, status: 'enabled' }).limit(1).get();
+    if (res.data[0] && res.data[0].deleteStatus !== 'deleted') return res.data[0];
+  } catch (error) {
+    // 初始化阶段 admins 集合可能还不存在，允许走引导期白名单。
+  }
+  return BOOTSTRAP_ADMIN_MAP[phone] || null;
 }
 
 async function findUserByPhone(phone) {
@@ -41,6 +53,65 @@ function nowText() {
 
 function nextId(prefix) {
   return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+
+async function fetchPagedCollection(buildQuery, { page = 1, pageSize = 20, orderBy, orderDirection = 'desc' } = {}) {
+  const safePage = Math.max(1, Number(page || 1));
+  const safePageSize = Math.min(50, Math.max(10, Number(pageSize || 20)));
+  let query = buildQuery();
+  if (orderBy) {
+    query = query.orderBy(orderBy, orderDirection);
+  }
+  const [res, countRes] = await Promise.all([
+    query.skip((safePage - 1) * safePageSize).limit(safePageSize).get(),
+    buildQuery().count()
+  ]);
+  return {
+    items: res.data,
+    page: safePage,
+    pageSize: safePageSize,
+    total: countRes.total,
+    hasMore: (safePage - 1) * safePageSize + res.data.length < countRes.total
+  };
+}
+
+async function fetchAllCollection(buildQuery, { pageSize = 100, orderBy, orderDirection = 'desc' } = {}) {
+  const safePageSize = Math.min(100, Math.max(20, Number(pageSize || 100)));
+  let page = 1;
+  let hasMore = true;
+  const items = [];
+  while (hasMore) {
+    let query = buildQuery();
+    if (orderBy) {
+      query = query.orderBy(orderBy, orderDirection);
+    }
+    const res = await query.skip((page - 1) * safePageSize).limit(safePageSize).get();
+    items.push(...res.data);
+    hasMore = res.data.length === safePageSize;
+    page += 1;
+  }
+  return items;
+}
+
+function maskPhone(phone) {
+  if (!phone || phone.length < 7) return phone || '';
+  return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
+}
+
+function sanitizePayload(value) {
+  if (Array.isArray(value)) {
+    return value.map(sanitizePayload);
+  }
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  const next = {};
+  Object.keys(value).forEach((key) => {
+    if (key === '_id' || key === '_openid') return;
+    next[key] = sanitizePayload(value[key]);
+  });
+  return next;
 }
 
 async function getCurrentCloudUser() {
@@ -70,25 +141,30 @@ async function requireSuperAdminCloudUser() {
   return user;
 }
 
+async function requireProtectedSuperAdminCloudUser() {
+  const user = await requireSuperAdminCloudUser();
+  const admin = await findAdminByPhone(user.phone);
+  if (!admin || admin.protected !== true) throw new Error('ROOT_ADMIN_PERMISSION_DENIED');
+  return {
+    user,
+    admin
+  };
+}
+
 function mapPermissionError(error) {
   if (!error || !error.message) return null;
   const mapping = {
     CURRENT_USER_NOT_FOUND: fail('未找到当前登录用户', 'CURRENT_USER_NOT_FOUND'),
     ADMIN_PERMISSION_DENIED: fail('仅管理员可操作', 'ADMIN_PERMISSION_DENIED'),
     SUPER_ADMIN_PERMISSION_DENIED: fail('仅超级管理员可操作', 'SUPER_ADMIN_PERMISSION_DENIED'),
+    ROOT_ADMIN_PERMISSION_DENIED: fail('仅特殊超级管理员可操作', 'ROOT_ADMIN_PERMISSION_DENIED'),
     ORDER_PERMISSION_DENIED: fail('无权查看该订单', 'ORDER_PERMISSION_DENIED'),
     ADDRESS_PERMISSION_DENIED: fail('无权查看该地址', 'ADDRESS_PERMISSION_DENIED')
   };
   return mapping[error.message] || null;
 }
 
-async function loginByPhone(payload) {
-  const { phone } = payload;
-  if (!phone) {
-    return fail('手机号不能为空', 'PHONE_REQUIRED');
-  }
-
-  const wxContext = cloud.getWXContext();
+async function upsertUserByVerifiedPhone({ phone, wxContext, authSource = 'manual_dev' }) {
   const adminRecord = await findAdminByPhone(phone);
   let user = await findUserByPhone(phone);
 
@@ -100,11 +176,15 @@ async function loginByPhone(payload) {
       nickName: `客户${phone.slice(-4)}`,
       avatar: '',
       role: adminRecord ? adminRecord.role : 'customer',
+      adminProtected: adminRecord ? adminRecord.protected === true : false,
       customerStatus: 'not_applied',
       company: '',
       region: '',
       addressDetail: '',
       remark: '',
+      phoneAuthAt: nowText(),
+      phoneAuthSource: authSource,
+      lastLoginAt: nowText(),
       createdAt: nowText(),
       updatedAt: nowText()
     };
@@ -112,10 +192,19 @@ async function loginByPhone(payload) {
   } else {
     const patch = {
       openid: wxContext.OPENID || user.openid || '',
+      phoneAuthAt: nowText(),
+      phoneAuthSource: authSource,
+      lastLoginAt: nowText(),
       updatedAt: nowText()
     };
     if (adminRecord && user.role !== adminRecord.role) {
       patch.role = adminRecord.role;
+    }
+    if (adminRecord) {
+      patch.adminProtected = adminRecord.protected === true;
+    } else if (isAdminRole(user.role)) {
+      patch.role = 'customer';
+      patch.adminProtected = false;
     }
     await db.collection('users').doc(user._id).update({ data: patch });
     user = {
@@ -124,9 +213,78 @@ async function loginByPhone(payload) {
     };
   }
 
+  return {
+    user,
+    adminRecord
+  };
+}
+
+async function getWechatPhoneNumberByCode(phoneCode) {
+  if (!phoneCode) {
+    return fail('缺少微信手机号授权凭据', 'PHONE_CODE_REQUIRED');
+  }
+
+  if (!cloud.openapi || !cloud.openapi.phonenumber || !cloud.openapi.phonenumber.getPhoneNumber) {
+    return fail('当前云函数未启用微信手机号能力，请重新上传部署 api 云函数后重试', 'WECHAT_PHONE_API_UNAVAILABLE');
+  }
+
+  try {
+    const res = await cloud.openapi.phonenumber.getPhoneNumber({ code: phoneCode });
+    const phoneInfo = res.phone_info || res.phoneInfo || {};
+    const phone = phoneInfo.purePhoneNumber || phoneInfo.phoneNumber || res.purePhoneNumber || res.phoneNumber || '';
+
+    if (!phone) {
+      return fail('未获取到微信手机号，请重试', 'WECHAT_PHONE_EMPTY');
+    }
+
+    return ok({
+      phone,
+      countryCode: phoneInfo.countryCode || res.countryCode || '86'
+    });
+  } catch (error) {
+    return fail(`微信手机号授权失败：${error.message || '请在真机调试中重试'}`, 'WECHAT_PHONE_FETCH_FAILED');
+  }
+}
+
+async function loginByPhone(payload) {
+  const { phone } = payload;
+  if (!phone) {
+    return fail('手机号不能为空', 'PHONE_REQUIRED');
+  }
+  if (!DEV_PHONE_LOGIN_ENABLED) {
+    return fail('当前环境已关闭手填手机号登录，请使用微信手机号授权登录', 'DEV_PHONE_LOGIN_DISABLED');
+  }
+
+  const wxContext = cloud.getWXContext();
+  const { user, adminRecord } = await upsertUserByVerifiedPhone({
+    phone,
+    wxContext,
+    authSource: 'manual_dev'
+  });
+
   return ok({
     user,
     adminRecord
+  });
+}
+
+async function loginByWxPhone(payload) {
+  const { phoneCode } = payload;
+  const wxContext = cloud.getWXContext();
+  const phoneRes = await getWechatPhoneNumberByCode(phoneCode);
+  if (!phoneRes.ok) return phoneRes;
+
+  const { phone } = phoneRes.data;
+  const { user, adminRecord } = await upsertUserByVerifiedPhone({
+    phone,
+    wxContext,
+    authSource: 'wechat_phone'
+  });
+
+  return ok({
+    user,
+    adminRecord,
+    verifiedPhone: maskPhone(phone)
   });
 }
 
@@ -142,18 +300,30 @@ async function getCurrentUser(payload) {
     return fail('未找到当前用户', 'USER_NOT_FOUND');
   }
 
+  const patch = {};
+  if (wxContext.OPENID && user.openid !== wxContext.OPENID) {
+    patch.openid = wxContext.OPENID;
+  }
+
   const adminRecord = await findAdminByPhone(user.phone);
   if (adminRecord && user.role !== adminRecord.role) {
+    patch.role = adminRecord.role;
+  }
+  if (adminRecord) {
+    patch.adminProtected = adminRecord.protected === true;
+  } else if (isAdminRole(user.role)) {
+    patch.role = 'customer';
+    patch.adminProtected = false;
+  }
+
+  if (Object.keys(patch).length) {
+    patch.updatedAt = nowText();
     await db.collection('users').doc(user._id).update({
-      data: {
-        role: adminRecord.role,
-        updatedAt: nowText()
-      }
+      data: patch
     });
     user = {
       ...user,
-      role: adminRecord.role,
-      updatedAt: nowText()
+      ...patch
     };
   }
 
@@ -166,7 +336,16 @@ async function listCategories() {
     .orderBy('sort', 'asc')
     .limit(100)
     .get();
-  return ok(res.data);
+  return ok(res.data.filter((item) => item.deleteStatus !== 'deleted'));
+}
+
+async function listCategoriesForAdmin() {
+  await requireAdminCloudUser();
+  const res = await db.collection('categories')
+    .orderBy('sort', 'asc')
+    .limit(100)
+    .get();
+  return ok(res.data.filter((item) => item.deleteStatus !== 'deleted'));
 }
 
 async function listProducts() {
@@ -342,17 +521,31 @@ async function listAddresses(payload) {
   return ok(res.data);
 }
 
-async function listCustomers() {
+async function listCustomers(payload = {}) {
   await requireAdminCloudUser();
-  const usersRes = await db.collection('users').where({ role: 'customer' }).limit(200).get();
-  const ordersRes = await db.collection('orders').limit(500).get();
-  const addressesRes = await db.collection('addresses').limit(500).get();
-  const users = usersRes.data;
-  const orders = ordersRes.data;
-  const addresses = addressesRes.data;
-  const customers = users.map((item) => {
-    const customerOrders = orders.filter((order) => order.userId === item.id);
-    const addressCount = addresses.filter((address) => address.userId === item.id).length;
+  const pagedUsers = await fetchPagedCollection(
+    () => db.collection('users').where({ role: 'customer' }),
+    {
+      page: payload.page || 1,
+      pageSize: payload.pageSize || 20,
+      orderBy: 'updatedAt',
+      orderDirection: 'desc'
+    }
+  );
+  const users = pagedUsers.items;
+  const customers = await Promise.all(users.map(async (item) => {
+    const [customerOrders, customerAddresses] = await Promise.all([
+      fetchAllCollection(() => db.collection('orders').where({ userId: item.id }), {
+        pageSize: 100,
+        orderBy: 'createdAt',
+        orderDirection: 'desc'
+      }),
+      fetchAllCollection(() => db.collection('addresses').where({ userId: item.id }), {
+        pageSize: 100,
+        orderBy: 'createdAt',
+        orderDirection: 'desc'
+      })
+    ]);
     return {
       ...item,
       displayName: item.company || item.nickName,
@@ -365,10 +558,238 @@ async function listCustomers() {
       statusClass: `status-${item.customerStatus || 'not_applied'}`,
       orderCount: customerOrders.length,
       totalAmount: customerOrders.reduce((sum, order) => sum + Number(order.amount || 0), 0).toFixed(2),
-      addressCount
+      addressCount: customerAddresses.length
     };
+  }));
+  return ok({
+    items: customers,
+    page: pagedUsers.page,
+    pageSize: pagedUsers.pageSize,
+    total: pagedUsers.total,
+    hasMore: pagedUsers.hasMore
   });
-  return ok(customers);
+}
+
+async function listAdmins(payload = {}) {
+  await requireProtectedSuperAdminCloudUser();
+  const role = payload.role === 'super_admin' ? 'super_admin' : 'admin';
+  const res = await db.collection('admins')
+    .where({ status: 'enabled', role })
+    .orderBy('createdAt', 'desc')
+    .limit(100)
+    .get();
+  return ok(res.data.filter((item) => item.deleteStatus !== 'deleted'));
+}
+
+async function addAdmin(payload) {
+  const { phone, role = 'admin', name = '', remark = '' } = payload;
+  if (!/^1\d{10}$/.test(phone || '')) {
+    return fail('请输入正确手机号', 'INVALID_PHONE');
+  }
+  const { user: operator } = await requireProtectedSuperAdminCloudUser();
+  const safeRole = role === 'super_admin' ? 'super_admin' : 'admin';
+  const existingRes = await db.collection('admins').where({ phone }).limit(1).get();
+  const existing = existingRes.data[0] || null;
+  const now = nowText();
+
+  if (existing) {
+    if (existing.deleteStatus !== 'deleted' && existing.role !== safeRole) {
+      return fail('该手机号已是其他后台角色，请先删除后再重新添加', 'ADMIN_ROLE_CONFLICT');
+    }
+    await db.collection('admins').doc(existing._id).update({
+      data: {
+        role: safeRole,
+        status: 'enabled',
+        deleteStatus: 'normal',
+        name,
+        remark,
+        updatedAt: now,
+        updatedBy: operator.id
+      }
+    });
+  } else {
+    await db.collection('admins').add({
+      data: {
+        id: nextId('admin'),
+        phone,
+        role: safeRole,
+        status: 'enabled',
+        deleteStatus: 'normal',
+        protected: false,
+        name,
+        remark,
+        createdAt: now,
+        createdBy: operator.id,
+        updatedAt: now
+      }
+    });
+  }
+
+  const user = await findUserByPhone(phone);
+  if (user && user.role !== safeRole) {
+    await db.collection('users').doc(user._id).update({
+      data: {
+        role: safeRole,
+        updatedAt: now
+      }
+    });
+  }
+
+  await db.collection('operation_logs').add({
+    data: {
+      id: nextId('op'),
+      operatorId: operator.id,
+      operatorName: operator.nickName,
+      type: 'admin_add',
+      target: phone,
+      summary: `添加${safeRole === 'super_admin' ? '超级管理员' : '管理员'} ${maskPhone(phone)}`,
+      createdAt: now
+    }
+  });
+
+  return ok({ phone, role: safeRole, status: 'enabled', deleteStatus: 'normal', name, remark });
+}
+
+async function updateAdmin(payload) {
+  const { id, role = 'admin', phone, name = '', remark = '' } = payload;
+  if (!id) return fail('缺少管理员 ID', 'ADMIN_ID_REQUIRED');
+  if (!/^1\d{10}$/.test(phone || '')) return fail('请输入正确手机号', 'INVALID_PHONE');
+  const { user: operator } = await requireProtectedSuperAdminCloudUser();
+  const safeRole = role === 'super_admin' ? 'super_admin' : 'admin';
+  const adminRes = await db.collection('admins').where({ id, role: safeRole }).limit(1).get();
+  const admin = adminRes.data[0] || null;
+  if (!admin || admin.deleteStatus === 'deleted') return fail('管理员不存在', 'ADMIN_NOT_FOUND');
+  if (admin.protected === true && admin.phone !== phone) {
+    return fail('特殊超级管理员不能修改手机号', 'ADMIN_PROTECTED_PHONE_LOCKED');
+  }
+
+  const duplicateRes = await db.collection('admins').where({ phone }).limit(10).get();
+  const duplicate = duplicateRes.data.find((item) => item.id !== id && item.deleteStatus !== 'deleted');
+  if (duplicate) return fail('该手机号已是后台账号', 'ADMIN_PHONE_DUPLICATED');
+
+  const now = nowText();
+  await db.collection('admins').doc(admin._id).update({
+    data: {
+      phone,
+      name,
+      remark,
+      updatedAt: now,
+      updatedBy: operator.id
+    }
+  });
+
+  const oldUser = await findUserByPhone(admin.phone);
+  if (oldUser && admin.phone !== phone) {
+    await db.collection('users').doc(oldUser._id).update({
+      data: {
+        role: 'customer',
+        updatedAt: now
+      }
+    });
+  }
+  const user = await findUserByPhone(phone);
+  if (user && user.role !== safeRole) {
+    await db.collection('users').doc(user._id).update({
+      data: {
+        role: safeRole,
+        updatedAt: now
+      }
+    });
+  }
+
+  await db.collection('operation_logs').add({
+    data: {
+      id: nextId('op'),
+      operatorId: operator.id,
+      operatorName: operator.nickName,
+      type: 'admin_update',
+      target: phone,
+      summary: `修改${safeRole === 'super_admin' ? '超级管理员' : '管理员'} ${maskPhone(phone)}`,
+      createdAt: now
+    }
+  });
+
+  return ok({ id, phone, role: safeRole, name, remark });
+}
+
+async function deleteAdmin(payload) {
+  const { id, role = 'admin' } = payload;
+  if (!id) return fail('缺少管理员 ID', 'ADMIN_ID_REQUIRED');
+  const { user: operator } = await requireProtectedSuperAdminCloudUser();
+  const safeRole = role === 'super_admin' ? 'super_admin' : 'admin';
+  const adminRes = await db.collection('admins').where({ id, role: safeRole }).limit(1).get();
+  const admin = adminRes.data[0] || null;
+  if (!admin || admin.deleteStatus === 'deleted') return fail('管理员不存在', 'ADMIN_NOT_FOUND');
+  if (admin.phone === operator.phone) return fail('不能删除自己', 'ADMIN_DELETE_SELF_DENIED');
+  if (admin.protected === true) return fail('特殊超级管理员不能删除', 'ADMIN_DELETE_PROTECTED_DENIED');
+
+  const now = nowText();
+  await db.collection('admins').doc(admin._id).update({
+    data: {
+      deleteStatus: 'deleted',
+      updatedAt: now,
+      updatedBy: operator.id
+    }
+  });
+
+  const user = await findUserByPhone(admin.phone);
+  if (user && user.role === safeRole) {
+    await db.collection('users').doc(user._id).update({
+      data: {
+        role: 'customer',
+        updatedAt: now
+      }
+    });
+  }
+
+  await db.collection('operation_logs').add({
+    data: {
+      id: nextId('op'),
+      operatorId: operator.id,
+      operatorName: operator.nickName,
+      type: 'admin_delete',
+      target: admin.phone,
+      summary: `删除${safeRole === 'super_admin' ? '超级管理员' : '管理员'} ${maskPhone(admin.phone)}`,
+      createdAt: now
+    }
+  });
+
+  return ok({ id, deleted: true });
+}
+
+async function createCategoryAudit(payload) {
+  const user = await requireAdminCloudUser();
+  const { type, targetId, beforeData, afterData, summary } = payload;
+  if (!type) return fail('缺少分类变更类型', 'CATEGORY_AUDIT_TYPE_REQUIRED');
+
+  if (type === 'category_delete') {
+    const productCount = await db.collection('products')
+      .where({ categoryId: targetId, deleteStatus: 'normal' })
+      .count();
+    if (productCount.total > 0) {
+      return fail('该分类下还有商品，不能删除', 'CATEGORY_HAS_PRODUCTS');
+    }
+  }
+
+  const audit = {
+    id: nextId('audit'),
+    type,
+    targetCollection: 'categories',
+    targetId: targetId || '',
+    submitterId: user.id,
+    submitterName: user.nickName,
+    submittedAt: nowText(),
+    status: 'pending',
+    reviewerId: '',
+    reviewerName: '',
+    reviewedAt: '',
+    beforeData: beforeData ? sanitizePayload(beforeData) : null,
+    afterData: afterData ? sanitizePayload(afterData) : null,
+    summary: summary || '',
+    rejectReason: ''
+  };
+  await db.collection('audit_logs').add({ data: audit });
+  return ok(audit);
 }
 
 async function reviewCustomer(payload) {
@@ -407,17 +828,49 @@ async function getCustomerDetail(payload) {
   const userRes = await db.collection('users').where({ id }).limit(1).get();
   const customer = userRes.data[0] || null;
   if (!customer) return fail('未找到客户', 'CUSTOMER_NOT_FOUND');
-  const [ordersRes, addressesRes, logsRes] = await Promise.all([
-    db.collection('orders').where({ userId: id }).get(),
-    db.collection('addresses').where({ userId: id }).get(),
-    db.collection('operation_logs').limit(200).get()
+  const logsPage = Math.max(1, Number(payload.logsPage || 1));
+  const logsPageSize = Math.min(50, Math.max(10, Number(payload.logsPageSize || 20)));
+  const [orders, addresses, operatorLogs, targetLogs] = await Promise.all([
+    fetchAllCollection(() => db.collection('orders').where({ userId: id }), {
+      pageSize: 100,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    }),
+    fetchAllCollection(() => db.collection('addresses').where({ userId: id }), {
+      pageSize: 100,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    }),
+    fetchAllCollection(() => db.collection('operation_logs').where({ operatorId: id }), {
+      pageSize: 100,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    }),
+    fetchAllCollection(() => db.collection('operation_logs').where({ target: customer.phone }), {
+      pageSize: 100,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    })
   ]);
-  const logs = logsRes.data.filter((item) => item.operatorId === id || item.target === customer.phone).slice(0, 20);
+  const logMap = new Map();
+  operatorLogs.concat(targetLogs).forEach((item) => {
+    if (!logMap.has(item.id)) {
+      logMap.set(item.id, item);
+    }
+  });
+  const allLogs = Array.from(logMap.values()).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  const logs = allLogs.slice((logsPage - 1) * logsPageSize, logsPage * logsPageSize);
   return ok({
     customer,
-    orders: ordersRes.data,
-    addresses: addressesRes.data,
-    logs
+    orderCount: orders.length,
+    orderAmount: orders.reduce((sum, item) => sum + Number(item.amount || 0), 0).toFixed(2),
+    latestOrders: orders.slice(0, 5),
+    addresses,
+    logs,
+    logsPage,
+    logsPageSize,
+    logsTotal: allLogs.length,
+    logsHasMore: logsPage * logsPageSize < allLogs.length
   });
 }
 
@@ -468,7 +921,7 @@ async function createOrder(payload) {
   }
 
   const orderId = nextId('order');
-  const orderNo = `QCSJ${Date.now()}`;
+  const orderNo = `QCSJZL${Date.now()}`;
   const order = {
     id: orderId,
     orderNo,
@@ -549,10 +1002,28 @@ async function listUserOrders(payload) {
   if (userId && userId !== currentUser.id) {
     throw new Error('ORDER_PERMISSION_DENIED');
   }
-  const res = await db.collection('orders').where({ userId: currentUser.id }).get();
-  const orders = res.data.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  const items = await listOrderItemsByOrderIds(orders.map((item) => item.id));
-  return ok(attachItemsToOrders(orders, items));
+  const status = payload.status && payload.status !== 'all' ? payload.status : '';
+  const pagedOrders = await fetchPagedCollection(
+    () => {
+      const query = { userId: currentUser.id };
+      if (status) query.status = status;
+      return db.collection('orders').where(query);
+    },
+    {
+      page: payload.page || 1,
+      pageSize: payload.pageSize || 20,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    }
+  );
+  const items = await listOrderItemsByOrderIds(pagedOrders.items.map((item) => item.id));
+  return ok({
+    items: attachItemsToOrders(pagedOrders.items, items),
+    page: pagedOrders.page,
+    pageSize: pagedOrders.pageSize,
+    total: pagedOrders.total,
+    hasMore: pagedOrders.hasMore
+  });
 }
 
 async function getOrderDetail(payload) {
@@ -595,12 +1066,29 @@ async function confirmReceive(payload) {
   });
 }
 
-async function listAdminOrders() {
+async function listAdminOrders(payload = {}) {
   await requireAdminCloudUser();
-  const res = await db.collection('orders').get();
-  const orders = res.data.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  const items = await listOrderItemsByOrderIds(orders.map((item) => item.id));
-  return ok(attachItemsToOrders(orders, items));
+  const status = payload.status && payload.status !== 'all' ? payload.status : '';
+  const pagedOrders = await fetchPagedCollection(
+    () => {
+      const query = status ? { status } : {};
+      return query.status ? db.collection('orders').where(query) : db.collection('orders');
+    },
+    {
+      page: payload.page || 1,
+      pageSize: payload.pageSize || 20,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    }
+  );
+  const items = await listOrderItemsByOrderIds(pagedOrders.items.map((item) => item.id));
+  return ok({
+    items: attachItemsToOrders(pagedOrders.items, items),
+    page: pagedOrders.page,
+    pageSize: pagedOrders.pageSize,
+    total: pagedOrders.total,
+    hasMore: pagedOrders.hasMore
+  });
 }
 
 async function updateOrderStatus(payload) {
@@ -689,6 +1177,10 @@ exports.main = async (event) => {
       return loginByPhone(payload);
     }
 
+    if (action === 'authLoginByWxPhone') {
+      return loginByWxPhone(payload);
+    }
+
     if (action === 'authGetCurrentUser') {
       return getCurrentUser(payload);
     }
@@ -703,6 +1195,10 @@ exports.main = async (event) => {
 
     if (action === 'listCategories') {
       return listCategories(payload);
+    }
+
+    if (action === 'listCategoriesForAdmin') {
+      return listCategoriesForAdmin(payload);
     }
 
     if (action === 'getProduct') {
@@ -739,6 +1235,22 @@ exports.main = async (event) => {
 
     if (action === 'listCustomers') {
       return listCustomers(payload);
+    }
+
+    if (action === 'listAdmins') {
+      return listAdmins(payload);
+    }
+
+    if (action === 'addAdmin') {
+      return addAdmin(payload);
+    }
+
+    if (action === 'updateAdmin') {
+      return updateAdmin(payload);
+    }
+
+    if (action === 'deleteAdmin') {
+      return deleteAdmin(payload);
     }
 
     if (action === 'reviewCustomer') {
@@ -787,8 +1299,8 @@ exports.main = async (event) => {
         reviewerId: '',
         reviewerName: '',
         reviewedAt: '',
-        beforeData: payload.beforeData || null,
-        afterData: payload.afterData || null,
+        beforeData: payload.beforeData ? sanitizePayload(payload.beforeData) : null,
+        afterData: payload.afterData ? sanitizePayload(payload.afterData) : null,
         summary: payload.summary || '',
         rejectReason: ''
       };
@@ -796,10 +1308,36 @@ exports.main = async (event) => {
       return ok(audit);
     }
 
+    if (action === 'createCategoryAudit') {
+      return createCategoryAudit(payload);
+    }
+
     if (action === 'listAudits') {
       await requireAdminCloudUser();
-      const res = await db.collection('audit_logs').get();
-      return ok(res.data.sort((a, b) => String(b.submittedAt).localeCompare(String(a.submittedAt))));
+      const allowedStatuses = ['pending', 'approved', 'rejected'];
+      const status = allowedStatuses.includes(payload.status) ? payload.status : 'all';
+      const page = Math.max(1, Number(payload.page || 1));
+      const pageSize = Math.min(50, Math.max(10, Number(payload.pageSize || 20)));
+      const offset = (page - 1) * pageSize;
+      const buildQuery = () => {
+        const collection = db.collection('audit_logs');
+        return status === 'all' ? collection : collection.where({ status });
+      };
+      const [res, countRes] = await Promise.all([
+        buildQuery()
+        .orderBy('submittedAt', 'desc')
+          .skip(offset)
+          .limit(pageSize)
+          .get(),
+        buildQuery().count()
+      ]);
+      return ok({
+        items: res.data,
+        page,
+        pageSize,
+        total: countRes.total,
+        hasMore: offset + res.data.length < countRes.total
+      });
     }
 
     if (action === 'reviewAudit') {
@@ -816,7 +1354,7 @@ exports.main = async (event) => {
           if (audit.type === 'product_create') {
             const productData = {
               id: nextId('p'),
-              ...audit.afterData,
+              ...sanitizePayload(audit.afterData || {}),
               createdAt: nowText(),
               updatedAt: nowText()
             };
@@ -827,7 +1365,7 @@ exports.main = async (event) => {
             if (product) {
               await db.collection('products').doc(product._id).update({
                 data: {
-                  ...audit.afterData,
+                  ...sanitizePayload(audit.afterData || {}),
                   updatedAt: nowText()
                 }
               });
@@ -840,12 +1378,62 @@ exports.main = async (event) => {
           if (home) {
             await db.collection('home_contents').doc(home._id).update({
               data: {
-                ...audit.afterData,
+                ...sanitizePayload(audit.afterData || {}),
                 updatedAt: nowText(),
                 updatedBy: reviewer.id
               }
             });
           }
+        }
+        if (audit.targetCollection === 'categories') {
+          if (audit.type === 'category_create') {
+            const categoryData = {
+              id: nextId('cat'),
+              status: 'enabled',
+              deleteStatus: 'normal',
+              ...sanitizePayload(audit.afterData || {}),
+              createdAt: nowText(),
+              updatedAt: nowText(),
+              updatedBy: reviewer.id
+            };
+            await db.collection('categories').add({ data: categoryData });
+          } else {
+            const categoryRes = await db.collection('categories').where({ id: audit.targetId }).limit(1).get();
+            const category = categoryRes.data[0] || null;
+            if (category) {
+              if (audit.type === 'category_delete') {
+                const productCount = await db.collection('products')
+                  .where({ categoryId: audit.targetId, deleteStatus: 'normal' })
+                  .count();
+                if (productCount.total > 0) {
+                  return fail('该分类下还有商品，不能删除', 'CATEGORY_HAS_PRODUCTS');
+                }
+              }
+              const patch = audit.type === 'category_delete'
+                ? {
+                    deleteStatus: 'deleted',
+                    updatedAt: nowText(),
+                    updatedBy: reviewer.id
+                  }
+                : {
+                    ...sanitizePayload(audit.afterData || {}),
+                    updatedAt: nowText(),
+                    updatedBy: reviewer.id
+                  };
+              await db.collection('categories').doc(category._id).update({ data: patch });
+            }
+          }
+          await db.collection('operation_logs').add({
+            data: {
+              id: nextId('op'),
+              operatorId: reviewer.id,
+              operatorName: reviewer.nickName,
+              type: 'category_audit_approve',
+              target: audit.targetId || (audit.afterData && audit.afterData.name) || '',
+              summary: `通过${audit.summary || '分类变更'}`,
+              createdAt: nowText()
+            }
+          });
         }
       }
 
@@ -888,3 +1476,4 @@ exports.main = async (event) => {
     throw error;
   }
 };
+

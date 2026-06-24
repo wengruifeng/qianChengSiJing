@@ -1,21 +1,10 @@
-const { callCloud, canUseCloud } = require('./cloud');
-const { runtime } = require('./config');
+const { cloudFirst } = require('./cloud');
 const { getStore, updateStore, nextId } = require('./store');
 const { getCurrentUser } = require('./auth');
-const { findProduct, getAvailableStock } = require('./business');
 
-function cloudFirst(action, payload, fallback) {
-  if (runtime.mode === 'cloud-first' && canUseCloud()) {
-    return callCloud(action, payload).then((res) => {
-      if (res.ok) return res.data;
-      if (runtime.fallbackToMock) return fallback();
-      throw new Error(res.message || `${action} failed`);
-    }).catch((error) => {
-      if (runtime.fallbackToMock) return fallback();
-      throw error;
-    });
-  }
-  return Promise.resolve(fallback());
+function getAvailableStock(product) {
+  if (!product) return 0;
+  return Math.max(0, (product.stock || 0) - (product.lockedStock || 0));
 }
 
 function enrichLocalCartItem(item, store) {
@@ -27,7 +16,7 @@ function enrichLocalCartItem(item, store) {
 function addToCartMock(productId, quantity = 1) {
   const user = getCurrentUser();
   if (!user) return { ok: false, message: '请先登录' };
-  const product = findProduct(productId);
+  const product = getStore().products.find((item) => item.id === productId);
   if (!product) return { ok: false, message: '商品不存在' };
   const nextQuantity = Number(quantity) || 0;
   const availableStock = getAvailableStock(product);

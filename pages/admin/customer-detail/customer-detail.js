@@ -1,4 +1,4 @@
-const { fetchCustomerDetail, statusMap } = require('../../../utils/customer-service');
+const { fetchCustomerDetail, fetchCustomerLogsPage, statusMap } = require('../../../utils/customer-service');
 
 Page({
   data: {
@@ -8,11 +8,16 @@ Page({
     orderAmount: '0.00',
     logs: [],
     addresses: [],
-    latestOrders: []
+    latestOrders: [],
+    logsPage: 1,
+    logsPageSize: 20,
+    logsHasMore: false,
+    loadingLogs: false
   },
 
   onLoad(options) {
-    fetchCustomerDetail(options.id).then(({ customer, orders, addresses, logs }) => {
+    this.customerId = options.id;
+    fetchCustomerDetail(options.id).then(({ customer, orderCount, orderAmount, latestOrders, addresses, logs, logsPage, logsPageSize, logsHasMore }) => {
       this.setData({
         customer,
         initial: customer.nickName.substring(0, 1),
@@ -21,14 +26,34 @@ Page({
         regionText: customer.region || '-',
         addressText: customer.addressDetail || '-',
         remarkText: customer.remark || '-',
-        orderCount: orders.length,
-        orderAmount: orders.reduce((sum, item) => sum + Number(item.amount || 0), 0).toFixed(2),
+        orderCount,
+        orderAmount,
         addresses,
-        latestOrders: orders.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 5),
-        logs
+        latestOrders,
+        logs,
+        logsPage,
+        logsPageSize,
+        logsHasMore
       });
     }).catch(() => {
       wx.showToast({ title: '客户资料加载失败', icon: 'none' });
+    });
+  },
+
+  loadMoreLogs() {
+    if (this.data.loadingLogs || !this.data.logsHasMore || !this.customerId) return;
+    this.setData({ loadingLogs: true });
+    fetchCustomerLogsPage(this.customerId, this.data.logsPage + 1, this.data.logsPageSize).then((result) => {
+      this.setData({
+        logs: this.data.logs.concat(result.logs || []),
+        logsPage: result.logsPage,
+        logsPageSize: result.logsPageSize,
+        logsHasMore: result.logsHasMore
+      });
+    }).catch(() => {
+      wx.showToast({ title: '操作记录加载失败', icon: 'none' });
+    }).finally(() => {
+      this.setData({ loadingLogs: false });
     });
   }
 });

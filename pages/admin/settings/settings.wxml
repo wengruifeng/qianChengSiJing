@@ -1,11 +1,71 @@
 <view class="page">
   <view class="form-card">
-    <view class="form-row"><view>店铺logo</view><text>›</text></view>
-    <view class="form-row"><view>店铺名称</view><text>前呈似景供应链</text></view>
-    <view class="form-row"><view>经营状态</view><text>营业中</text></view>
-    <view class="form-row"><view>行业范围</view><text>食品饮料</text></view>
-    <view class="form-row"><view>经营方式</view><text>批发</text></view>
-    <view class="form-row"><view>联系电话</view><text>13243592231</text></view>
+    <view class="section-title">店铺展示</view>
+    <view class="upload-card">
+      <view class="upload-head">
+        <view class="form-label">店铺Logo</view>
+        <button class="small-btn" bindtap="uploadImage" data-key="logo" data-scope="logo" loading="{{uploadingKey === 'logo'}}">上传图片</button>
+      </view>
+      <image wx:if="{{form.logoImage}}" class="upload-preview upload-preview-logo" src="{{form.logoImage}}" mode="aspectFill"></image>
+      <input class="form-input upload-input" value="{{form.logoImage}}" data-key="logoImage" bindinput="onInput" placeholder="云存储 fileID" />
+    </view>
+
+    <view class="form-row">
+      <view class="form-label">店铺名称</view>
+      <input class="form-input" value="{{form.storeName}}" data-key="storeName" bindinput="onInput" placeholder="请输入店铺名称" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">经营状态</view>
+      <input class="form-input" value="{{form.businessStatus}}" data-key="businessStatus" bindinput="onInput" placeholder="请输入经营状态" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">行业范围</view>
+      <input class="form-input" value="{{form.industryScope}}" data-key="industryScope" bindinput="onInput" placeholder="请输入行业范围" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">经营方式</view>
+      <input class="form-input" value="{{form.operationMode}}" data-key="operationMode" bindinput="onInput" placeholder="请输入经营方式" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">首页主标题</view>
+      <input class="form-input" value="{{form.bannerTitle}}" data-key="bannerTitle" bindinput="onInput" placeholder="请输入首页主标题" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">联系电话</view>
+      <input class="form-input" value="{{form.servicePhone}}" data-key="servicePhone" bindinput="onInput" placeholder="请输入联系电话" />
+    </view>
+    <view class="form-row form-row-top">
+      <view class="form-label">滚动公告</view>
+      <textarea class="notice-input" value="{{form.notice}}" data-key="notice" bindinput="onInput" placeholder="请输入首页滚动公告"></textarea>
+    </view>
+
+    <view class="upload-card">
+      <view class="upload-head">
+        <view class="form-label">首页主图</view>
+        <button class="small-btn" bindtap="uploadImage" data-key="hero" data-scope="hero" loading="{{uploadingKey === 'hero'}}">上传图片</button>
+      </view>
+      <image wx:if="{{form.heroImage}}" class="upload-preview" src="{{form.heroImage}}" mode="aspectFill"></image>
+      <input class="form-input upload-input" value="{{form.heroImage}}" data-key="heroImage" bindinput="onInput" placeholder="云存储 fileID" />
+    </view>
+
+    <view class="upload-card">
+      <view class="upload-head">
+        <view class="form-label">专题横幅</view>
+        <button class="small-btn" bindtap="uploadImage" data-key="topic" data-scope="topic" loading="{{uploadingKey === 'topic'}}">上传图片</button>
+      </view>
+      <image wx:if="{{form.topicImage}}" class="upload-preview upload-preview-banner" src="{{form.topicImage}}" mode="aspectFill"></image>
+      <input class="form-input upload-input" value="{{form.topicImage}}" data-key="topicImage" bindinput="onInput" placeholder="云存储 fileID" />
+    </view>
   </view>
-  <button class="btn-primary">保存</button>
+
+  <view class="settings-hint">首页主图、专题横幅、公告等展示内容，现统一在店铺设置里维护。</view>
+
+  <button class="btn-primary submit-btn" bindtap="submitSettings" loading="{{submitting}}">提交审核</button>
+
+  <view class="form-card tool-card" wx:if="{{isSuperAdmin && showDevTools}}">
+    <view class="section-title">云数据工具</view>
+    <view class="tool-desc">初始化、清理演示数据仅用于联调。正式运营时请谨慎操作。</view>
+    <button class="btn-primary" bindtap="runSeedDemo" loading="{{seeding}}">初始化演示数据</button>
+    <button class="btn-secondary" bindtap="runResetDemo" loading="{{resetting}}">清理演示图片路径</button>
+  </view>
 </view>

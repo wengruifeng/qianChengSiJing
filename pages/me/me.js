@@ -1,4 +1,4 @@
-const { getCurrentUser, isAdmin, refreshCurrentUser } = require('../../utils/auth');
+const { getCurrentUser, goLoginOrApply, isAdmin, refreshCurrentUser } = require('../../utils/auth');
 
 Page({
   data: {
@@ -34,7 +34,7 @@ Page({
   },
 
   goApply() {
-    wx.navigateTo({ url: '/pages/apply/apply' });
+    goLoginOrApply();
   },
 
   goAddress() {

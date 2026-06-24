@@ -1,4 +1,4 @@
-const { requireLogin } = require('../../utils/auth');
+const { leaveRestrictedPageAfterLoginCancel, requireLogin } = require('../../utils/auth');
 const { fetchUserOrders } = require('../../utils/order-service');
 
 Page({
@@ -24,7 +24,10 @@ Page({
   },
 
   onShow() {
-    if (!requireLogin('/pages/orders/orders')) return;
+    if (!requireLogin('/pages/orders/orders')) {
+      leaveRestrictedPageAfterLoginCancel();
+      return;
+    }
     fetchUserOrders().then((orders) => {
       this.setData({ orders }, this.filter);
     }).catch(() => {

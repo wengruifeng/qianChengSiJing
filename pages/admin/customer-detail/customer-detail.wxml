@@ -36,5 +36,6 @@
   <view class="card block">
     <view class="block-title">操作记录</view>
     <view class="muted" wx:for="{{logs}}" wx:key="id">{{item.createdAt}} {{item.summary}}</view>
+    <button wx:if="{{logsHasMore}}" bindtap="loadMoreLogs" loading="{{loadingLogs}}" disabled="{{loadingLogs}}">加载更多记录</button>
   </view>
 </view>

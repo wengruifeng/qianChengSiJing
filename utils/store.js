@@ -1,4 +1,5 @@
 const initialData = require('../data/mock');
+const { runtime } = require('./config');
 
 const STORE_KEY = 'zht_store_v1';
 const STORE_VERSION = 10;
@@ -66,11 +67,37 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function buildEmptyStore() {
+  return {
+    admins: [],
+    users: [],
+    categories: [],
+    products: [],
+    homeContent: {},
+    cart: [],
+    addresses: [],
+    orders: [],
+    auditLogs: [],
+    messageSettings: [],
+    operationLogs: [],
+    __version: STORE_VERSION,
+    __mode: runtime.localMockEnabled ? 'mock' : 'strict-cloud'
+  };
+}
+
 function seedStore() {
   const existing = wx.getStorageSync(STORE_KEY);
+  if (!runtime.localMockEnabled) {
+    const emptyStore = buildEmptyStore();
+    if (!existing || existing.__mode !== 'strict-cloud' || (existing.__version || 1) < STORE_VERSION) {
+      wx.setStorageSync(STORE_KEY, emptyStore);
+    }
+    return;
+  }
   if (!existing) {
     const seeded = clone(initialData);
     seeded.__version = STORE_VERSION;
+    seeded.__mode = 'mock';
     wx.setStorageSync(STORE_KEY, seeded);
     return;
   }
@@ -81,6 +108,12 @@ function seedStore() {
 }
 
 function migrateStore(store) {
+  if (!runtime.localMockEnabled) {
+    const emptyStore = buildEmptyStore();
+    Object.keys(store).forEach((key) => delete store[key]);
+    Object.assign(store, emptyStore);
+    return;
+  }
   if (Array.isArray(store.products)) {
     store.products = store.products.map((product) => ({
       ...product,
@@ -89,7 +122,7 @@ function migrateStore(store) {
   }
   store.homeContent = {
     ...(store.homeContent || {}),
-    notice: '欢迎光临前呈似景供应链商城，如遇货品搜索不到请联系客服：13243592231',
+    notice: '欢迎光临前呈似景智链商城，如遇货品搜索不到请联系客服：13243592231',
     heroImage: '/assets/temp/home-hero.jpg',
     topicImage: '/assets/temp/topic-new.jpg',
     logoImage: '/assets/temp/logo.jpg'
@@ -143,6 +176,7 @@ function migrateStore(store) {
     });
   }
   store.__version = STORE_VERSION;
+  store.__mode = 'mock';
 }
 
 function getStore() {
@@ -180,3 +214,4 @@ module.exports = {
   setStore,
   updateStore
 };
+

@@ -1,9 +1,12 @@
-const { callCloud, canUseCloud } = require('./cloud');
-const { runtime } = require('./config');
+const { cloudFirst } = require('./cloud');
 const { getStore, updateStore, nextId, nowText, clone } = require('./store');
 const { getCurrentUser } = require('./auth');
-const { getAvailableStock } = require('./business');
 const { fetchCartItems } = require('./cart-service');
+
+function getAvailableStock(product) {
+  if (!product) return 0;
+  return Math.max(0, (product.stock || 0) - (product.lockedStock || 0));
+}
 
 const statusMap = {
   pending: '待确认',
@@ -17,20 +20,6 @@ const settlementMap = {
   pending: '待结算',
   settled: '已结算'
 };
-
-function cloudFirst(action, payload, fallback) {
-  if (runtime.mode === 'cloud-first' && canUseCloud()) {
-    return callCloud(action, payload).then((res) => {
-      if (res.ok) return res.data;
-      if (runtime.fallbackToMock) return fallback();
-      throw new Error(res.message || `${action} failed`);
-    }).catch((error) => {
-      if (runtime.fallbackToMock) return fallback();
-      throw error;
-    });
-  }
-  return Promise.resolve(fallback());
-}
 
 function decorateOrder(order, items) {
   const orderItems = items || order.items || [];
@@ -61,7 +50,7 @@ function createOrderMock({ address, remark, items }) {
   let orderRecord = null;
   updateStore((store) => {
     const orderId = nextId('order');
-    const orderNo = `QCSJ${Date.now()}`;
+    const orderNo = `QCSJZL${Date.now()}`;
     const amount = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
     const orderItems = items.map((item) => ({
       id: nextId('oi'),
@@ -143,11 +132,11 @@ function submitOrder({ address, remark }) {
 function fetchUserOrders() {
   const user = getCurrentUser();
   if (!user) return Promise.resolve([]);
-  return cloudFirst('listUserOrders', { userId: user.id }, () => {
+  return fetchAllPagedOrders('listUserOrders', { userId: user.id }, () => {
     return getStore().orders
       .filter((item) => item.userId === user.id)
       .map((item) => decorateOrder(item, item.items));
-  }).then((orders) => orders.map((item) => decorateOrder(item, item.items)));
+  });
 }
 
 function fetchOrderDetail(id) {
@@ -172,9 +161,9 @@ function confirmReceive(id) {
 }
 
 function fetchAdminOrders() {
-  return cloudFirst('listAdminOrders', {}, () => {
+  return fetchAllPagedOrders('listAdminOrders', {}, () => {
     return getStore().orders.map((order) => decorateOrder(order, order.items));
-  }).then((orders) => orders.map((item) => decorateOrder(item, item.items)));
+  });
 }
 
 function updateOrderStatus(id, nextStatus) {
@@ -243,3 +232,41 @@ module.exports = {
   updateOrderStatus,
   updateSettlementStatus
 };
+
+function normalizeOrderPageResult(result) {
+  if (Array.isArray(result)) {
+    return {
+      items: result,
+      page: 1,
+      pageSize: result.length,
+      total: result.length,
+      hasMore: false
+    };
+  }
+  return {
+    items: result && Array.isArray(result.items) ? result.items : [],
+    page: result && result.page ? result.page : 1,
+    pageSize: result && result.pageSize ? result.pageSize : 20,
+    total: result && typeof result.total === 'number' ? result.total : 0,
+    hasMore: !!(result && result.hasMore)
+  };
+}
+
+function fetchAllPagedOrders(action, payload, fallback) {
+  const pageSize = 50;
+  return cloudFirst(action, { ...payload, page: 1, pageSize }, fallback).then((firstResult) => {
+    const normalizedFirst = normalizeOrderPageResult(firstResult);
+    if (!normalizedFirst.hasMore) {
+      return normalizedFirst.items.map((item) => decorateOrder(item, item.items));
+    }
+    const tasks = [];
+    for (let page = 2; page <= Math.ceil(normalizedFirst.total / pageSize); page += 1) {
+      tasks.push(cloudFirst(action, { ...payload, page, pageSize }, fallback).then(normalizeOrderPageResult));
+    }
+    return Promise.all(tasks).then((results) => {
+      const orders = normalizedFirst.items.concat(results.flatMap((result) => result.items));
+      return orders.map((item) => decorateOrder(item, item.items));
+    });
+  });
+}
+

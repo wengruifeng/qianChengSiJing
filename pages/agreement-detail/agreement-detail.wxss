@@ -1,0 +1,35 @@
+.hero {
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+}
+
+.hero-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.hero-sub {
+  margin-top: 10rpx;
+  color: #6b7280;
+  font-size: 24rpx;
+}
+
+.section {
+  padding: 26rpx 28rpx;
+  margin-bottom: 18rpx;
+}
+
+.section-heading {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #202733;
+}
+
+.section-body {
+  margin-top: 14rpx;
+  color: #475569;
+  font-size: 26rpx;
+  line-height: 1.85;
+  white-space: pre-wrap;
+}

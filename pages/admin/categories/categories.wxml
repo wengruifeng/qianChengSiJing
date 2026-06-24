@@ -1,0 +1,45 @@
+<view class="page">
+  <view class="toolbar">
+    <view>
+      <view class="toolbar-title">分类列表</view>
+      <view class="toolbar-sub">新增、修改、删除都需要提交审核</view>
+    </view>
+    <button class="add-btn" bindtap="openCreate">新增</button>
+  </view>
+
+  <view class="empty" wx:if="{{loading}}">正在加载分类...</view>
+  <view class="empty" wx:elif="{{!categories.length}}">暂无分类</view>
+  <view class="card category-card" wx:for="{{categories}}" wx:key="id">
+    <view class="category-main">
+      <view class="category-name">{{item.name}}</view>
+      <view class="category-sub">排序：{{item.sort}}</view>
+    </view>
+    <view class="category-actions">
+      <view class="icon-btn" bindtap="edit" data-id="{{item.id}}">编辑</view>
+      <view class="icon-btn danger" bindtap="requestDelete" data-id="{{item.id}}">删除</view>
+    </view>
+  </view>
+
+  <view wx:if="{{showEditor}}" class="editor-mask" catchtap="cancelEdit">
+    <view class="editor-panel" catchtap="noop">
+      <view class="editor-head">
+        <view class="editor-title">{{editing ? '编辑分类' : '新增分类'}}</view>
+        <view class="editor-close" bindtap="cancelEdit">关闭</view>
+      </view>
+      <view class="form-card editor-form">
+        <view class="form-row">
+          <view class="form-label">分类名称</view>
+          <input class="form-input" value="{{form.name}}" bindinput="onName" placeholder="请输入分类名称" />
+        </view>
+        <view class="form-row">
+          <view class="form-label">排序</view>
+          <input class="form-input" type="number" value="{{form.sort}}" bindinput="onSort" placeholder="数字越小越靠前" />
+        </view>
+      </view>
+      <view class="editor-actions">
+        <button class="btn-secondary" bindtap="cancelEdit">取消</button>
+        <button class="btn-primary" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">{{editing ? '提交修改审核' : '提交新增审核'}}</button>
+      </view>
+    </view>
+  </view>
+</view>

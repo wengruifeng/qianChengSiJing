@@ -1,7 +1,7 @@
 {
-  "description": "前呈似景供应链微信小程序",
+  "description": "前呈似景智链微信小程序",
   "appid": "wx3079736104fac8e3",
-  "projectname": "qianchengsijing-supply-miniprogram",
+  "projectname": "qianchengsijinzhilian-miniprogram",
   "miniprogramRoot": "./",
   "cloudfunctionRoot": "cloudfunctions/",
   "setting": {
@@ -30,7 +30,9 @@
     }
   },
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      { "type": "folder", "value": "scripts" }
+    ],
     "include": []
   },
   "compileType": "miniprogram",

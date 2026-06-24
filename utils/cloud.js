@@ -38,7 +38,27 @@ function callCloud(action, payload = {}, options = {}) {
   }).then((res) => res.result || { ok: false, message: 'Empty cloud result' });
 }
 
+function cloudFirst(action, payload = {}, fallback) {
+  if (runtime.mode === RUNTIME_MODE.CLOUD_FIRST && canUseCloud()) {
+    return callCloud(action, payload).then((res) => {
+      if (res.ok) return res.data;
+      if (runtime.fallbackToMock && typeof fallback === 'function') return fallback();
+      throw new Error(res.message || `${action} failed`);
+    }).catch((error) => {
+      if (runtime.fallbackToMock && typeof fallback === 'function') return fallback();
+      throw error;
+    });
+  }
+
+  if (runtime.fallbackToMock && typeof fallback === 'function') {
+    return Promise.resolve(fallback());
+  }
+
+  return Promise.reject(new Error('当前云服务不可用，请确认云开发环境和云函数已部署'));
+}
+
 module.exports = {
+  cloudFirst,
   callCloud,
   canUseCloud,
   initCloud

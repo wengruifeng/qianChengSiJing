@@ -64,12 +64,44 @@
 - [done] 客户与地址主链切云
 - [done] 购物车 / 订单 / 库存主链切云
 - [done] 审核中心与对账中心切云
-- [todo] 云开发初始化与真机联调执行
-- [todo] 云数据库安全规则细化
+- [doing] 云开发初始化与真机联调执行
+- [done] 云数据库安全规则第一轮细化
 - [blocked] 正式图片素材
 - [blocked] 旧商品/客户真实数据
 - [blocked] 订阅消息模板 ID
 - [blocked] 正式协议文本
+- [doing] 微信官方审核前清单整理，详见 [WECHAT_REVIEW_CHECKLIST.md](D:/codex/中货通小程序需求/docs/WECHAT_REVIEW_CHECKLIST.md)
+
+### 第五阶段联调打钩项
+
+联调说明总入口：
+
+- [done] 已补充 [CLOUD_SETUP_GUIDE.md](D:/codex/中货通小程序需求/docs/CLOUD_SETUP_GUIDE.md)
+
+建议先完成：
+
+- [ ] 上传并部署 `cloudfunctions/bootstrap`
+- [ ] 上传并部署 `cloudfunctions/api`
+- [ ] 执行 `bootstrap`，参数：`{ "seedDemo": true }`
+
+执行完 `seedDemo` 后建议打钩：
+
+- [ ] 首页分类区有内容
+- [ ] 首页“店长推荐”和“新品上新”有商品
+- [ ] 选购页有商品和分类
+- [ ] 商品详情页可正常打开
+- [ ] 前台订单页有历史订单
+- [ ] 管理员账号能看到后台入口
+- [ ] 后台商品管理有内容
+- [ ] 后台客户管理有内容
+- [ ] 后台订单管理有内容
+- [ ] 审核中心有演示记录
+- [ ] 对账中心有可筛选订单
+
+如果出现异常，优先去看：
+
+- [done] [CLOUD_SETUP_GUIDE.md](D:/codex/中货通小程序需求/docs/CLOUD_SETUP_GUIDE.md) 中的 `seedDemo` 联调打钩清单
+- [done] [CLOUD_SETUP_GUIDE.md](D:/codex/中货通小程序需求/docs/CLOUD_SETUP_GUIDE.md) 中的 `seedDemo` 异常排查口径
 
 ## 后补资料清单
 
@@ -98,3 +130,4 @@
 4. 细化导出与报表
 5. 先按联调文档完成一轮真机联调
 6. 再补真实数据、正式素材和导入导出模板
+7. 对照 [WECHAT_REVIEW_CHECKLIST.md](D:/codex/中货通小程序需求/docs/WECHAT_REVIEW_CHECKLIST.md) 做提审前收口

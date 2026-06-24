@@ -141,6 +141,8 @@
 
 - 管理端接口角色校验：
   - `listAdminProducts`
+  - `listAdmins`
+  - `addAdmin`
   - `listCustomers`
   - `reviewCustomer`
   - `getCustomerDetail`
@@ -149,6 +151,12 @@
   - `createAudit`
   - `listAudits`
   - `updateSettlementStatus`
+
+### 管理员手机号规则
+
+- 管理员手机号必须写入云端 `admins` 集合，不能只写本地缓存。
+- 添加管理员后，如果该手机号已存在于 `users` 集合，会同步更新 `users.role`。
+- 如果该手机号用户尚未登录，后续首次手机号授权登录时会根据 `admins` 自动同步角色。
 - 超级管理员专属审核：
   - `reviewAudit`
 - 用户数据归属校验：

@@ -14,8 +14,35 @@
   font-size: 32rpx;
 }
 
-.btn-primary {
-  margin-top: 38rpx;
+.auth-btn {
+  margin-top: 12rpx;
+}
+
+.auth-tip {
+  margin-top: 24rpx;
+  color: #7d8796;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.cancel-btn {
+  margin-top: 24rpx;
+}
+
+.dev-login-card {
+  margin-top: 52rpx;
+  padding-top: 36rpx;
+  border-top: 1rpx dashed #d7dfec;
+}
+
+.dev-login-title {
+  margin-bottom: 20rpx;
+  color: #7d8796;
+  font-size: 28rpx;
+}
+
+.dev-login-btn {
+  margin-top: 28rpx;
 }
 
 .tips {

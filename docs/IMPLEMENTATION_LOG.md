@@ -46,7 +46,7 @@
   - 订单新增独立结算状态：待结算 / 已结算。
 - 完成临时素材处理：
   - 裁剪压缩 logo、首页横幅、专题横幅和 6 张商品图到 `assets/temp/`。
-  - 原始整屏截图移动到项目目录外的 `D:\codex\前呈似景供应链_参考截图_不参与打包`。
+  - 原始整屏截图移动到项目目录外的 `D:\codex\前呈似景智链_参考截图_不参与打包`。
   - 小程序图片引用改为 `assets/temp/`。
   - `project.config.json` 排除 `references`、`docs` 和设计书文本。
 - 完成权限与按钮标准修正：
@@ -88,7 +88,7 @@
   - 支持逐单和批量标记已结算。
   - 支持勾选当前筛选结果中的订单后统一导出。
   - 支持单客户全部订单、全部客户订单、某客户单独一单的导出。
-  - 导出标题固定为“前呈似景配送中心”。
+  - 导出标题固定为“前呈似景智链配送中心”。
   - 单客户导出右下角展示客户门店、地址、电话。
   - 表格底部增加合计数量、合计金额和大写总额。
   - 支持生成 Excel 兼容文件和 CSV 文件。
@@ -171,7 +171,7 @@
   - 新增 `getHomeContent`
 - 新增 `utils/catalog-service.js`：
   - 统一封装商品与首页内容的 cloud-first 读取
-  - 云失败时按配置回退本地 mock
+  - 当时保留云失败按配置回退本地 mock，后续已切换为严格云联调
 - 新增 `utils/content.js`：
   - 抽离商品 enrich 和首页推荐/新品筛选逻辑
 - 切换为 cloud-first 的页面：
@@ -192,7 +192,7 @@
   - 新增 `getCustomerDetail`
 - 新增 `utils/customer-service.js`：
   - 统一封装客户申请、地址、客户列表、客户详情、客户审核的 cloud-first 访问
-  - 云失败时按配置回退本地 mock
+  - 当时保留云失败按配置回退本地 mock，后续已切换为严格云联调
 - 切换为 cloud-first 的页面：
   - `pages/apply/apply.js`
   - `pages/address/address.js`
@@ -210,7 +210,7 @@
   - 新增 `updateOrderStatus`
 - 新增 `utils/order-service.js`：
   - 统一封装订单提交、订单查询、后台订单状态变更、库存锁定/释放/扣减的 cloud-first 访问
-  - 云失败时按配置回退本地 mock
+  - 当时保留云失败按配置回退本地 mock，后续已切换为严格云联调
 - 切换为 cloud-first 的页面：
   - `pages/checkout/checkout.js`
   - `pages/orders/orders.js`
@@ -225,7 +225,7 @@
   - 新增 `updateSettlementStatus`
 - 新增 `utils/audit-service.js`：
   - 统一封装审核记录读取、审核通过、审核拒绝的 cloud-first 访问
-  - 云失败时按配置回退本地 mock
+  - 当时保留云失败按配置回退本地 mock，后续已切换为严格云联调
 - 增强 `utils/order-service.js`：
   - 增加结算状态批量更新能力
 - 切换为 cloud-first 的页面：
@@ -245,7 +245,7 @@
   - 新增 `carts` 集合与演示种子数据
 - 新增 `utils/cart-service.js`：
   - 统一封装加购、查看选购、数量修改的 cloud-first 访问
-  - 云失败时按配置回退本地 mock
+  - 当时保留云失败按配置回退本地 mock，后续已切换为严格云联调
 - 切换为 cloud-first 的页面：
   - `pages/catalog/catalog.js`
   - `pages/product/product.js`
@@ -299,3 +299,94 @@
   - `confirmReceive`
 - `reviewAudit` 统一改为超级管理员助手校验。
 - 后台改订单状态时，操作记录现在会写入真实操作者 ID 和昵称，而不是固定“后台”。
+- 在 [CLOUD_SETUP_GUIDE.md](D:/codex/中货通小程序需求/docs/CLOUD_SETUP_GUIDE.md) 中新增 `seedDemo` 后联调打钩清单，便于初始化完成后逐页验收首页、选购、订单、后台和权限链路。
+- 在 [DELIVERY_CHECKLIST.md](D:/codex/中货通小程序需求/docs/DELIVERY_CHECKLIST.md) 中补充“第五阶段联调打钩项”，把部署云函数、执行 `seedDemo` 和关键页面验收入口纳入总清单。
+
+### 严格云联调模式
+
+- 关闭 `utils/config.js` 中的本地 mock 兜底开关：
+  - `fallbackToMock: false`
+  - `localMockEnabled: false`
+- 调整 `utils/store.js`：
+  - 联调时不再把 `data/mock.js` 灌入本地 Storage
+  - 已有本地演示数据会被重置为空 store，避免干扰云端判断
+- 调整 `utils/auth.js`：
+  - 严格云联调模式下不再把云端登录用户同步回本地 mock store
+- 修正之前仍直读本地 `store` 的关键页面：
+  - `pages/cart/cart.js`
+  - `pages/admin/dashboard/dashboard.js`
+  - `pages/admin/stats/stats.js`
+  - `pages/admin/import-export/import-export.js`
+- 修正管理页中仍引用本地商品/首页内容快照的逻辑：
+  - `pages/admin/home-content/home-content.js`
+  - `pages/admin/product-edit/product-edit.js`
+  - `pages/admin/products/products.js`
+
+### 云存储图片规范
+
+- 新增 [CLOUD_STORAGE_GUIDE.md](D:/codex/中货通小程序需求/docs/CLOUD_STORAGE_GUIDE.md)
+  - 说明 `seedDemo` 只初始化数据库，不上传图片到云存储
+  - 约束品牌图、首页图、分类图标、商品主图、详情图的推荐目录结构
+  - 补充 `products`、`home_contents`、`categories` 的图片字段口径建议
+- 更新 `README.md`、`BLOCKERS_AND_NEXT_STEPS.md`、`DATA_MODEL.md`
+  - 同步说明图片需要独立上传到云存储
+  - 同步收口数据模型中的图片字段建议
+
+### 图片上传执行方案与脚本骨架
+
+- 新增 [CLOUD_IMAGE_UPLOAD_PLAN.md](D:/codex/中货通小程序需求/docs/CLOUD_IMAGE_UPLOAD_PLAN.md)
+  - 明确当前临时图片的推荐云路径
+  - 明确首页图、商品主图、详情图、分类图标的上传顺序
+  - 明确上传后需要回写的数据库字段
+- 新增 `scripts/upload-cloud-images.js`
+  - 扫描 `assets/temp/`
+  - 生成本地图片到推荐云路径的 manifest
+  - 默认输出到 `docs/cloud-image-manifest.json`
+- 后台接入按入口上传到对应云存储目录的能力：
+  - `pages/admin/home-content` 支持上传 Logo、首页主图、专题横幅
+  - `pages/admin/product-edit` 支持上传商品主图、商品详情图
+  - 上传后会将 `fileID` 回写到表单字段，再继续走审核提交流程
+
+### 2026-06-05 补充
+
+- 完成 [WECHAT_PHONE_AUTH_DESIGN.md](D:/codex/中货通小程序需求/docs/WECHAT_PHONE_AUTH_DESIGN.md) 正式设计文档：
+  - 明确当前“手填手机号登录”的安全风险
+  - 明确“微信手机号授权登录 + OPENID 绑定 + 管理员手机号映射”的目标方案
+  - 明确前端、云函数、数据模型、迁移策略、测试方案和上线收口要求
+- 开始落地微信手机号授权登录第一批改造：
+  - `utils/config.js` 增加 `wechatPhoneAuthEnabled` 与 `devPhoneLoginEnabled`
+  - `pages/login` 切为“微信手机号一键登录”为主路径，手填手机号入口仅开发开关可见
+  - `utils/auth.js` 新增 `loginByWxPhoneCode`
+  - `cloudfunctions/api/index.js` 新增 `authLoginByWxPhone`
+  - `authLoginByPhone` 收口为开发联调用途，并记录 `phoneAuthSource`
+- 更新 [WECHAT_REVIEW_CHECKLIST.md](D:/codex/中货通小程序需求/docs/WECHAT_REVIEW_CHECKLIST.md)：
+  - 将登录改造从阻塞项推进为进行中
+  - 明确提审前需关闭手填手机号入口并完成真机回归
+- 更新 [BLOCKERS_AND_NEXT_STEPS.md](D:/codex/中货通小程序需求/docs/BLOCKERS_AND_NEXT_STEPS.md)：
+  - 将登录安全改造文档纳入正式阻塞项口径
+
+### 2026-06-09 补充
+
+- 扩展后台账号与分类管理：
+  - 管理员和超级管理员默认可查看价格，不需要客户看价申请。
+  - 后台账号管理拆为“管理员管理”和“超级管理员管理”两个入口。
+  - 只有 `admins.protected === true` 的特殊超级管理员可进入账号管理。
+  - 账号支持新增、编辑手机号/姓名/备注、软删除；删除后同步 `users.role = customer`。
+  - 特殊超级管理员不能删除，当前登录账号不能删除自己。
+  - 新增“分类管理”后台入口，普通管理员和超级管理员均可提交分类新增/编辑/删除审核。
+  - 分类只维护名称和排序；删除为软删除，且分类下有商品时禁止删除。
+  - 商品编辑页分类字段改为弹框选择分类名称，支持搜索，并在本机记忆上次选择分类。
+- 全项目排查早期本地逻辑残留：
+  - 新增统一 `utils/cloud.js` 的 `cloudFirst()` 严格云端调用助手。
+  - 商品、购物车、订单、客户、审核服务层统一改用该助手。
+  - 修正旧 `cloudFirst()` 在云不可用时即使关闭 `fallbackToMock` 仍会执行本地 fallback 的问题。
+  - 申请页“保存默认地址”从本地 `updateStore` 改为云端 `saveAddress`。
+  - 登录缓存读取在严格云模式下不再从本地 mock store 找用户。
+  - `utils/business.js` 不再被当前页面/服务层依赖，避免误接早期本地购物车/审核逻辑。
+- 修正管理员手机号设置不生效的问题：
+  - 后台管理员页面从本地 mock 写入改为云端 `admins` 集合写入
+  - 新增 `utils/admin-service.js`
+  - 云函数新增 `listAdmins` 与 `addAdmin`
+  - 添加管理员时，如果目标手机号已存在于 `users`，会同步更新 `users.role`
+  - 未登录过的目标手机号会在后续手机号授权登录时按 `admins` 自动同步角色
+

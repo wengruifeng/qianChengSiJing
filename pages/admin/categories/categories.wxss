@@ -1,0 +1,142 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding: 22rpx 24rpx;
+  margin-bottom: 18rpx;
+  border-radius: 8rpx;
+  background: #ffffff;
+}
+
+.toolbar-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1d2733;
+}
+
+.toolbar-sub {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #8a97a8;
+}
+
+.add-btn {
+  width: 132rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  margin: 0;
+  padding: 0;
+  border-radius: 8rpx;
+  background: #1592f5;
+  color: #ffffff;
+  font-size: 26rpx;
+}
+
+.category-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  min-height: 112rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 14rpx;
+}
+
+.category-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1d2733;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.category-sub {
+  margin-top: 8rpx;
+  color: #8a97a8;
+  font-size: 24rpx;
+}
+
+.category-actions {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  min-width: 72rpx;
+  height: 48rpx;
+  padding: 0 14rpx;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  color: #1592f5;
+  background: #e8f5ff;
+}
+
+.icon-btn.danger {
+  color: #e55b4b;
+  background: #fff1ef;
+}
+
+.editor-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+}
+
+.editor-panel {
+  width: 100%;
+  max-width: 640rpx;
+  padding: 28rpx 24rpx;
+  border-radius: 12rpx;
+  background: #f3f6fb;
+}
+
+.editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18rpx;
+}
+
+.editor-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1d2733;
+}
+
+.editor-close {
+  color: #1592f5;
+  font-size: 26rpx;
+}
+
+.editor-form {
+  margin-bottom: 20rpx;
+}
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.editor-actions .btn-primary,
+.editor-actions .btn-secondary {
+  flex: 1;
+  margin: 0;
+}

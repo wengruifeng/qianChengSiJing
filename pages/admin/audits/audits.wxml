@@ -2,6 +2,12 @@
   <scroll-view class="tabs" scroll-x>
     <view class="tab {{active === item.value ? 'active' : ''}}" wx:for="{{tabs}}" wx:key="value" data-value="{{item.value}}" bindtap="changeTab">{{item.label}}</view>
   </scroll-view>
+  <view class="card state-box" wx:if="{{loading}}">正在加载审核记录...</view>
+  <view class="card error-box" wx:elif="{{errorText}}">
+    <view class="error-title">审核记录加载失败</view>
+    <view class="error-desc">{{errorText}}</view>
+    <button class="retry-btn" bindtap="refresh">重新加载</button>
+  </view>
   <view class="audit card" wx:for="{{filteredAudits}}" wx:key="id">
     <view class="between">
       <view class="title">{{item.summary}}</view>
@@ -10,11 +16,52 @@
     <view class="meta-row">
       <view class="meta-pill">{{item.typeText}}</view>
       <view class="meta-pill">{{item.submitterName}}</view>
+      <view class="meta-pill">变更 {{item.changedCount}} 项</view>
+      <view class="meta-pill warn-pill" wx:if="{{item.sensitiveChangedCount > 0}}">敏感字段 {{item.sensitiveChangedCount}} 项</view>
     </view>
     <view class="muted">提交时间：{{item.submittedAt}}</view>
     <view class="muted">审核信息：{{item.reviewText}}</view>
-    <view class="diff" wx:if="{{item.diffText.length > 0}}">
-      <view wx:for="{{item.diffText}}" wx:key="field">{{item.field}}：{{item.before}} → {{item.after}}</view>
+    <view class="expand-row" wx:if="{{item.diffItems.length > 0}}" bindtap="toggleExpand" data-id="{{item.id}}">
+      <text class="expand-text">{{item.expanded ? '收起变更详情' : '展开变更详情'}}</text>
+      <text class="expand-arrow">{{item.expanded ? '︿' : '﹀'}}</text>
+    </view>
+    <view class="diff" wx:if="{{item.diffItems.length > 0 && item.expanded}}">
+      <view class="diff-item {{item.sensitive ? 'diff-item-sensitive' : ''}}" wx:for="{{item.diffItems}}" wx:key="key">
+        <view class="diff-head">
+          <text class="diff-label">{{item.label}}</text>
+          <text class="diff-flag" wx:if="{{item.sensitive}}">敏感字段</text>
+        </view>
+        <block wx:if="{{item.kind === 'text'}}">
+          <view class="diff-line"><text class="diff-side">修改前</text><text class="diff-value">{{item.beforeText}}</text></view>
+          <view class="diff-line"><text class="diff-side">修改后</text><text class="diff-value">{{item.afterText}}</text></view>
+        </block>
+        <block wx:elif="{{item.kind === 'longText'}}">
+          <view class="diff-block">
+            <view class="diff-side">修改前</view>
+            <view class="diff-paragraph">{{item.beforeText}}</view>
+          </view>
+          <view class="diff-block diff-block-new">
+            <view class="diff-side">修改后</view>
+            <view class="diff-paragraph">{{item.afterText}}</view>
+          </view>
+        </block>
+        <block wx:elif="{{item.kind === 'image'}}">
+          <view class="diff-block">
+            <view class="diff-side">修改前</view>
+            <view class="diff-image-list" wx:if="{{item.beforeImages.length > 0}}">
+              <image class="diff-image" wx:for="{{item.beforeImages}}" wx:key="*this" src="{{item}}" mode="aspectFill"></image>
+            </view>
+            <view class="muted" wx:else>无图片</view>
+          </view>
+          <view class="diff-block diff-block-new">
+            <view class="diff-side">修改后</view>
+            <view class="diff-image-list" wx:if="{{item.afterImages.length > 0}}">
+              <image class="diff-image" wx:for="{{item.afterImages}}" wx:key="*this" src="{{item}}" mode="aspectFill"></image>
+            </view>
+            <view class="muted" wx:else>无图片</view>
+          </view>
+        </block>
+      </view>
     </view>
     <view class="muted reject-text" wx:if="{{item.status === 'rejected'}}">拒绝原因：{{item.rejectReason || '后台拒绝'}}</view>
     <view class="actions" wx:if="{{item.status === 'pending'}}">
@@ -22,5 +69,11 @@
       <button data-id="{{item.id}}" bindtap="reject">拒绝</button>
     </view>
   </view>
-  <view class="card empty-box" wx:if="{{filteredAudits.length === 0}}">当前筛选条件下没有审核记录</view>
+  <view class="card empty-box" wx:if="{{!loading && !errorText && filteredAudits.length === 0}}">当前筛选条件下没有审核记录</view>
+  <view class="pager" wx:if="{{!loading && !errorText && filteredAudits.length > 0}}">
+    <button class="load-more-btn" wx:if="{{hasMore}}" loading="{{loadingMore}}" disabled="{{loadingMore}}" bindtap="loadMore">
+      {{loadingMore ? '加载中...' : '加载更多'}}
+    </button>
+    <view class="no-more" wx:else>已显示全部 {{total}} 条</view>
+  </view>
 </view>

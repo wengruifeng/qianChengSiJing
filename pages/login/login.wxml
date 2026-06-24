@@ -1,14 +1,37 @@
 <view class="page login">
-  <view class="title">前呈似景供应链</view>
-  <view class="sub">手机号登录后可申请查看商品价格</view>
-  <view class="form-card">
+  <view class="title">前呈似景智链</view>
+  <view class="sub">登录后可申请查看商品价格</view>
+
+  <button
+    wx:if="{{phoneAuthEnabled}}"
+    class="btn-primary auth-btn"
+    open-type="getPhoneNumber"
+    bindgetphonenumber="onGetPhoneNumber"
+    loading="{{loading}}"
+    disabled="{{loading}}"
+  >
+    {{loading ? '登录中...' : '手机号一键登录'}}
+  </button>
+
+  <view class="auth-tip" wx:if="{{phoneAuthEnabled}}">
+    仅用于登录与订单、地址、价格查看等身份校验，不会用于其他用途。
+  </view>
+
+  <button class="btn-ghost cancel-btn" bindtap="cancelLogin" disabled="{{loading}}">
+    暂不登录，先逛逛
+  </button>
+
+  <view class="dev-login-card" wx:if="{{showDevPhoneLogin}}">
+    <view class="dev-login-title">开发联调入口</view>
+    <view class="form-card">
     <view class="form-row">
       <view class="form-label">手机号</view>
       <input class="form-input" type="number" maxlength="11" placeholder="请输入手机号" value="{{phone}}" bindinput="onPhone" />
     </view>
-  </view>
-  <button class="btn-primary" bindtap="login">登录</button>
-  <view class="tips">
-    测试账号：13800000000 超级管理员，13900000000 管理员，13700000000 已通过客户
+    </view>
+    <button class="btn-ghost dev-login-btn" bindtap="login" disabled="{{loading}}">
+      {{loading ? '登录中...' : '手填手机号登录'}}
+    </button>
   </view>
 </view>
+

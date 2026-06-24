@@ -1,7 +1,11 @@
-const { getStore } = require('../../utils/store');
-const { getCurrentUser, canSeePrice } = require('../../utils/auth');
-const { getAvailableStock } = require('../../utils/business');
+const { getCurrentUser, canSeePrice, goLoginOrApply, refreshCurrentUser } = require('../../utils/auth');
 const { addToCart, fetchCartItems } = require('../../utils/cart-service');
+const { fetchCategories, fetchVisibleProducts } = require('../../utils/catalog-service');
+
+function getAvailableStock(product) {
+  if (!product) return 0;
+  return Math.max(0, (product.stock || 0) - (product.lockedStock || 0));
+}
 
 function enrichProduct(item) {
   const availableStock = getAvailableStock(item);
@@ -27,24 +31,34 @@ Page({
   },
 
   onShow() {
-    const store = getStore();
-    const categories = store.categories
-      .filter((item) => item.status === 'enabled')
-      .sort((a, b) => a.sort - b.sort);
-    const activeCategoryId = this.data.activeCategoryId || (categories[0] && categories[0].id) || '';
-    const user = getCurrentUser();
-
-    this.setData({
-      categories: categories.map((item) => ({ ...item, active: item.id === activeCategoryId })),
-      products: store.products
-        .filter((item) => item.saleStatus === 'on' && item.deleteStatus !== 'deleted')
-        .map(enrichProduct),
-      activeCategoryId,
-      canSeePrice: canSeePrice(),
-      applyButtonText: user && user.customerStatus === 'pending' ? '查看申请' : '申请查看'
-    }, () => {
-      this.filterProducts();
-      this.refreshCartSummary();
+    Promise.all([
+      refreshCurrentUser(),
+      fetchCategories(),
+      fetchVisibleProducts()
+    ]).then(([user, categories, products]) => {
+      const currentUser = user || getCurrentUser();
+      const activeCategoryId = this.data.activeCategoryId || (categories[0] && categories[0].id) || '';
+      this.setData({
+        categories: categories.map((item) => ({ ...item, active: item.id === activeCategoryId })),
+        products: products.map(enrichProduct),
+        activeCategoryId,
+        canSeePrice: canSeePrice(),
+        applyButtonText: currentUser && currentUser.customerStatus === 'pending' ? '查看申请' : '申请查看'
+      }, () => {
+        this.filterProducts();
+        this.refreshCartSummary();
+      });
+    }).catch(() => {
+      this.setData({
+        categories: [],
+        products: [],
+        filteredProducts: [],
+        activeCategoryId: '',
+        canSeePrice: canSeePrice(),
+        applyButtonText: getCurrentUser() && getCurrentUser().customerStatus === 'pending' ? '查看申请' : '申请查看',
+        cartCount: 0,
+        total: '0.00'
+      });
     });
   },
 
@@ -91,11 +105,13 @@ Page({
   addCart(event) {
     const user = getCurrentUser();
     if (!user) {
-      wx.navigateTo({ url: '/pages/login/login' });
+      wx.navigateTo({
+        url: `/pages/login/login?redirect=${encodeURIComponent('/pages/cart/cart')}`
+      });
       return;
     }
     if (!this.data.canSeePrice) {
-      wx.navigateTo({ url: '/pages/apply/apply' });
+      goLoginOrApply();
       return;
     }
     addToCart(event.currentTarget.dataset.id, 1).then((result) => {
@@ -110,8 +126,7 @@ Page({
   },
 
   goApply() {
-    const user = getCurrentUser();
-    wx.navigateTo({ url: user ? '/pages/apply/apply' : '/pages/login/login' });
+    goLoginOrApply();
   },
 
   checkout() {

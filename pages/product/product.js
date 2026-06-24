@@ -1,20 +1,34 @@
 const { addToCart } = require('../../utils/cart-service');
-const { canSeePrice, requireLogin } = require('../../utils/auth');
+const { canSeePrice, refreshCurrentUser, requireLogin } = require('../../utils/auth');
 const { fetchProductById } = require('../../utils/catalog-service');
 
 Page({
   data: {
     product: null,
     images: [],
+    detailImages: [],
     canSeePrice: false
   },
 
   onLoad(options) {
-    fetchProductById(options.id).then((product) => {
+    this.productId = options.id;
+    this.loadProduct();
+  },
+
+  onShow() {
+    if (this.productId) this.loadProduct();
+  },
+
+  loadProduct() {
+    Promise.all([
+      refreshCurrentUser(),
+      fetchProductById(this.productId)
+    ]).then(([, product]) => {
       const availableStock = product ? product.availableStock : 0;
       this.setData({
         product,
-        images: product ? [product.mainImage].concat(product.detailImages || []) : [],
+        images: product ? (product.imageList || []) : [],
+        detailImages: product ? (product.detailImages || []) : [],
         availableStock,
         canSeePrice: canSeePrice(),
         isSoldOut: availableStock <= 0,
@@ -24,6 +38,7 @@ Page({
       this.setData({
         product: null,
         images: [],
+        detailImages: [],
         availableStock: 0,
         canSeePrice: canSeePrice(),
         isSoldOut: true,

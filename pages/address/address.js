@@ -1,4 +1,4 @@
-const { getCurrentUser, requireLogin } = require('../../utils/auth');
+const { leaveRestrictedPageAfterLoginCancel, requireLogin } = require('../../utils/auth');
 const { saveAddress, fetchAddressesByCurrentUser } = require('../../utils/customer-service');
 
 Page({
@@ -18,7 +18,10 @@ Page({
   },
 
   onShow() {
-    if (!requireLogin('/pages/address/address')) return;
+    if (!requireLogin('/pages/address/address')) {
+      leaveRestrictedPageAfterLoginCancel();
+      return;
+    }
     this.refresh();
   },
 

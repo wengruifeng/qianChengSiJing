@@ -2,9 +2,17 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function imagePath(path, options) {
+  return options.includeBundledImages ? path : '';
+}
+
+function imageList(paths, options) {
+  return options.includeBundledImages ? paths : [];
+}
+
 const admins = [
-  { id: 'admin_001', phone: '13800000000', role: 'super_admin', status: 'enabled', createdAt: '2026-05-18 12:00' },
-  { id: 'admin_002', phone: '13900000000', role: 'admin', status: 'enabled', createdAt: '2026-05-18 12:00' }
+  { id: 'admin_001', phone: '13800000000', role: 'super_admin', status: 'enabled', deleteStatus: 'normal', protected: true, name: '特殊超级管理员', remark: '', createdAt: '2026-05-18 12:00' },
+  { id: 'admin_002', phone: '13900000000', role: 'admin', status: 'enabled', deleteStatus: 'normal', protected: false, name: '管理员', remark: '', createdAt: '2026-05-18 12:00' }
 ];
 
 const users = [
@@ -16,9 +24,9 @@ const users = [
     avatar: '',
     role: 'super_admin',
     customerStatus: 'approved',
-    company: '前呈似景供应链',
+    company: '前呈似景智链',
     region: '四川省 成都市',
-    addressDetail: '前呈似景供应链仓配中心',
+    addressDetail: '前呈似景智链仓配中心',
     remark: '',
     createdAt: '2026-05-18 12:00'
   },
@@ -30,9 +38,9 @@ const users = [
     avatar: '',
     role: 'admin',
     customerStatus: 'approved',
-    company: '前呈似景供应链',
+    company: '前呈似景智链',
     region: '四川省 成都市',
-    addressDetail: '前呈似景供应链仓配中心',
+    addressDetail: '前呈似景智链仓配中心',
     remark: '',
     createdAt: '2026-05-18 12:00'
   },
@@ -79,7 +87,8 @@ const categories = [
   { id: 'cat_10', name: '小吃', icon: '', sort: 10, status: 'enabled' }
 ];
 
-const products = [
+function createProducts(options) {
+  return [
   {
     id: 'p_1',
     name: '卤肠头',
@@ -87,8 +96,8 @@ const products = [
     code: 'LCT001',
     simple: 'lct',
     categoryId: 'cat_7',
-    mainImage: '/assets/temp/product-luchang.jpg',
-    detailImages: ['/assets/temp/product-luchang.jpg'],
+    mainImage: imagePath('/assets/temp/product-luchang.jpg', options),
+    detailImages: imageList(['/assets/temp/product-luchang.jpg'], options),
     spec: '1kg*10包/件',
     unit: '件',
     price: 168,
@@ -108,8 +117,8 @@ const products = [
     code: 'THYY002',
     simple: 'thyy',
     categoryId: 'cat_4',
-    mainImage: '/assets/temp/product-squid.jpg',
-    detailImages: ['/assets/temp/product-squid.jpg'],
+    mainImage: imagePath('/assets/temp/product-squid.jpg', options),
+    detailImages: imageList(['/assets/temp/product-squid.jpg'], options),
     spec: '2斤/包',
     unit: '包',
     price: 58,
@@ -129,8 +138,8 @@ const products = [
     code: 'GC003',
     simple: 'gc',
     categoryId: 'cat_2',
-    mainImage: '/assets/temp/product-gongcai.jpg',
-    detailImages: ['/assets/temp/product-gongcai.jpg'],
+    mainImage: imagePath('/assets/temp/product-gongcai.jpg', options),
+    detailImages: imageList(['/assets/temp/product-gongcai.jpg'], options),
     spec: '5斤/箱',
     unit: '箱',
     price: 175,
@@ -150,8 +159,8 @@ const products = [
     code: 'NYDL012',
     simple: 'nydl',
     categoryId: 'cat_5',
-    mainImage: '/assets/temp/product-dougan.jpg',
-    detailImages: ['/assets/temp/product-dougan.jpg'],
+    mainImage: imagePath('/assets/temp/product-dougan.jpg', options),
+    detailImages: imageList(['/assets/temp/product-dougan.jpg'], options),
     spec: '500g*20袋/箱-门店常备底料',
     unit: '箱',
     price: 198,
@@ -165,20 +174,27 @@ const products = [
     description: '用于测试底料分类、长规格和搜索命中。'
   }
 ];
+}
 
-const home_contents = [
+function createHomeContents(options) {
+  return [
   {
     id: 'home_content',
+    storeName: '前呈似景智链',
+    businessStatus: '营业中',
+    industryScope: '食品饮料',
+    operationMode: '批发',
     bannerTitle: '专注火锅串串食材',
-    notice: '欢迎光临前呈似景供应链商城，如遇货品搜索不到请联系客服：13243592231',
+    notice: '欢迎光临前呈似景智链商城，如遇货品搜索不到请联系客服：13243592231',
     servicePhone: '13243592231',
-    heroImage: '/assets/temp/home-hero.jpg',
-    topicImage: '/assets/temp/topic-new.jpg',
-    logoImage: '/assets/temp/logo.jpg',
+    heroImage: imagePath('/assets/temp/home-hero.jpg', options),
+    topicImage: imagePath('/assets/temp/topic-new.jpg', options),
+    logoImage: imagePath('/assets/temp/logo.jpg', options),
     recommendedProductIds: ['p_2', 'p_3', 'p_12'],
     newProductIds: ['p_2', 'p_12']
   }
 ];
+}
 
 const carts = [
   { id: 'cart_001', userId: 'user_customer', productId: 'p_2', quantity: 2, checked: true },
@@ -209,7 +225,7 @@ const addresses = [
 const orders = [
   {
     id: 'order_001',
-    orderNo: 'QCSJ20260514001',
+    orderNo: 'QCSJZL20260514001',
     userId: 'user_customer',
     customerName: '小巷串串',
     customerPhone: '13700000000',
@@ -234,7 +250,7 @@ const orders = [
   },
   {
     id: 'order_002',
-    orderNo: 'QCSJ20260519003',
+    orderNo: 'QCSJZL20260519003',
     userId: 'user_customer_2',
     customerName: '江边火锅',
     customerPhone: '13600000000',
@@ -259,16 +275,17 @@ const orders = [
   }
 ];
 
-const order_items = [
+function createOrderItems(options) {
+  return [
   {
     id: 'oi_001',
     orderId: 'order_001',
-    orderNo: 'QCSJ20260514001',
+    orderNo: 'QCSJZL20260514001',
     productId: 'p_2',
     productName: '烧烤豆干10片装15cm*15cm',
     spec: '30袋/份',
     unit: '袋',
-    mainImage: '/assets/temp/product-dougan.jpg',
+    mainImage: imagePath('/assets/temp/product-dougan.jpg', options),
     price: 8,
     quantity: 30,
     subtotal: 240
@@ -276,12 +293,12 @@ const order_items = [
   {
     id: 'oi_002',
     orderId: 'order_002',
-    orderNo: 'QCSJ20260519003',
+    orderNo: 'QCSJZL20260519003',
     productId: 'p_2',
     productName: '网红·糖心鱿鱼',
     spec: '2斤/包',
     unit: '包',
-    mainImage: '/assets/temp/product-squid.jpg',
+    mainImage: imagePath('/assets/temp/product-squid.jpg', options),
     price: 58,
     quantity: 4,
     subtotal: 232
@@ -289,17 +306,18 @@ const order_items = [
   {
     id: 'oi_003',
     orderId: 'order_002',
-    orderNo: 'QCSJ20260519003',
+    orderNo: 'QCSJZL20260519003',
     productId: 'p_3',
     productName: '贡菜',
     spec: '5斤/箱',
     unit: '箱',
-    mainImage: '/assets/temp/product-gongcai.jpg',
+    mainImage: imagePath('/assets/temp/product-gongcai.jpg', options),
     price: 169,
     quantity: 1,
     subtotal: 169
   }
 ];
+}
 
 const audit_logs = [
   {
@@ -347,25 +365,30 @@ const operation_logs = [
 
 const message_settings = [];
 
-const COLLECTION_SEED_MAP = {
-  admins,
-  users,
-  categories,
-  products,
-  orders,
-  order_items,
-  carts,
-  addresses,
-  audit_logs,
-  home_contents,
-  message_settings,
-  operation_logs
-};
+function getSeedData(options = {}) {
+  const normalizedOptions = {
+    includeBundledImages: !!options.includeBundledImages
+  };
 
-function getSeedData() {
-  return clone(COLLECTION_SEED_MAP);
+  const collectionSeedMap = {
+    admins,
+    users,
+    categories,
+    products: createProducts(normalizedOptions),
+    orders,
+    order_items: createOrderItems(normalizedOptions),
+    carts,
+    addresses,
+    audit_logs,
+    home_contents: createHomeContents(normalizedOptions),
+    message_settings,
+    operation_logs
+  };
+
+  return clone(collectionSeedMap);
 }
 
 module.exports = {
   getSeedData
 };
+

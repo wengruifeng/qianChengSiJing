@@ -35,6 +35,12 @@
 - 现在仍依赖 `assets/temp/`
 - 可演示，但不适合正式交付视觉
 
+补充说明：
+
+- `seedDemo` 不会自动把本地图片上传到云存储
+- 图片云存储目录规范与字段口径见 [CLOUD_STORAGE_GUIDE.md](D:/codex/中货通小程序需求/docs/CLOUD_STORAGE_GUIDE.md)
+- 图片上传执行顺序与清单生成脚本见 [CLOUD_IMAGE_UPLOAD_PLAN.md](D:/codex/中货通小程序需求/docs/CLOUD_IMAGE_UPLOAD_PLAN.md)
+
 ### 2. 旧商品 / 旧客户真实数据未导入
 
 还缺：
@@ -69,6 +75,7 @@
 - 前台客户只允许读自己的订单和地址
 - 管理端角色权限控制
 - 审核与后台修改权限规则
+- 正式登录方式需升级为微信手机号授权登录
 
 影响：
 
@@ -79,6 +86,7 @@
 
 - 已新增 [CLOUD_SECURITY_RULES.md](D:/codex/中货通小程序需求/docs/CLOUD_SECURITY_RULES.md)
 - 当前还缺的是把文档建议继续落实成更严格的云函数角色校验
+- 登录安全改造正式设计文档见 [WECHAT_PHONE_AUTH_DESIGN.md](D:/codex/中货通小程序需求/docs/WECHAT_PHONE_AUTH_DESIGN.md)
 
 ### 5. 订阅消息模板未接
 
@@ -94,18 +102,24 @@
 - 当前业务流程能跑
 - 但通知能力还是缺口
 
-### 6. 协议与正式文案未替换
+### 6. 协议与正式文案已基本补齐
 
-还缺：
+已完成：
 
 - 用户协议正文
 - 隐私协议正文
-- 某些正式公告与说明文案
+- 隐私指引口径文档
+- 审核说明建议文档
+
+仍需确认：
+
+- 微信后台隐私指引实际配置
+- 平台侧最终审核说明填写内容
 
 影响：
 
-- 演示没问题
-- 上线前必须补齐
+- 小程序内正文已经可直接查看
+- 平台后台仍需按 [WECHAT_PRIVACY_GUIDE.md](D:/codex/中货通小程序需求/docs/WECHAT_PRIVACY_GUIDE.md) 手工配置
 
 ### 7. 地址能力未完全切完
 
@@ -149,14 +163,26 @@
 ### 第四优先级：消息与协议
 
 1. 接订阅消息模板
-2. 替换用户协议和隐私协议
+2. 按 [WECHAT_REVIEW_NOTES.md](D:/codex/中货通小程序需求/docs/WECHAT_REVIEW_NOTES.md) 完成平台侧审核说明填写
 
 ## 现在最值得马上做的事
 
 如果你希望接下来继续推进而不是停在这里，我建议最先做：
 
 1. **补地址编辑 / 删除 / 默认地址切换**
-2. **补一版云数据库安全规则说明**
+2. **按 [WECHAT_PHONE_AUTH_DESIGN.md](D:/codex/中货通小程序需求/docs/WECHAT_PHONE_AUTH_DESIGN.md) 设计并切换微信手机号授权登录**
 3. **开始准备真实数据导入**
+
+## 微信审核前建议
+
+提交微信官方审核前，建议直接对照：
+
+- [WECHAT_REVIEW_CHECKLIST.md](D:/codex/中货通小程序需求/docs/WECHAT_REVIEW_CHECKLIST.md)
+
+优先收口：
+
+1. 主链路回归和权限自测
+2. 正式图片和真实业务数据
+3. 协议、隐私、审核说明
 
 这三件事最能把当前“可联调版”往“可正式运营版”推近。

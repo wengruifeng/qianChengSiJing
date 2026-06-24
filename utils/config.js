@@ -1,4 +1,4 @@
-const APP_NAME = '前呈似景供应链';
+const APP_NAME = '前呈似景智链';
 const APP_ID = 'wx3079736104fac8e3';
 const CLOUD_ENV_ID = 'a01-d4ggnjhhqfabf9ba2';
 
@@ -12,7 +12,11 @@ const runtime = {
   appId: APP_ID,
   cloudEnvId: CLOUD_ENV_ID,
   mode: RUNTIME_MODE.CLOUD_FIRST,
-  fallbackToMock: true
+  fallbackToMock: false,
+  localMockEnabled: false,
+  reviewMode: true,
+  wechatPhoneAuthEnabled: true,
+  devPhoneLoginEnabled: false
 };
 
 module.exports = {
@@ -22,3 +26,4 @@ module.exports = {
   RUNTIME_MODE,
   runtime
 };
+

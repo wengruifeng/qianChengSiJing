@@ -1,0 +1,71 @@
+{
+  "generatedAt": "2026-06-03T10:20:23.624Z",
+  "sourceRoot": "assets/temp",
+  "note": "当前脚本生成的是图片上传清单 manifest，用于人工上传或后续扩展自动上传逻辑。",
+  "itemCount": 9,
+  "items": [
+    {
+      "fileName": "home-hero.jpg",
+      "localPath": "assets/temp/home-hero.jpg",
+      "absolutePath": "D:\\codex\\中货通小程序需求\\assets\\temp\\home-hero.jpg",
+      "cloudPath": "home/hero/home-hero.jpg",
+      "size": 38185
+    },
+    {
+      "fileName": "logo.jpg",
+      "localPath": "assets/temp/logo.jpg",
+      "absolutePath": "D:\\codex\\中货通小程序需求\\assets\\temp\\logo.jpg",
+      "cloudPath": "branding/logo/logo.jpg",
+      "size": 2312
+    },
+    {
+      "fileName": "product-dougan.jpg",
+      "localPath": "assets/temp/product-dougan.jpg",
+      "absolutePath": "D:\\codex\\中货通小程序需求\\assets\\temp\\product-dougan.jpg",
+      "cloudPath": "products/main/product-dougan.jpg",
+      "size": 24141
+    },
+    {
+      "fileName": "product-egg.jpg",
+      "localPath": "assets/temp/product-egg.jpg",
+      "absolutePath": "D:\\codex\\中货通小程序需求\\assets\\temp\\product-egg.jpg",
+      "cloudPath": "products/main/product-egg.jpg",
+      "size": 28587
+    },
+    {
+      "fileName": "product-fishbag.jpg",
+      "localPath": "assets/temp/product-fishbag.jpg",
+      "absolutePath": "D:\\codex\\中货通小程序需求\\assets\\temp\\product-fishbag.jpg",
+      "cloudPath": "products/main/product-fishbag.jpg",
+      "size": 20613
+    },
+    {
+      "fileName": "product-gongcai.jpg",
+      "localPath": "assets/temp/product-gongcai.jpg",
+      "absolutePath": "D:\\codex\\中货通小程序需求\\assets\\temp\\product-gongcai.jpg",
+      "cloudPath": "products/main/product-gongcai.jpg",
+      "size": 47118
+    },
+    {
+      "fileName": "product-luchang.jpg",
+      "localPath": "assets/temp/product-luchang.jpg",
+      "absolutePath": "D:\\codex\\中货通小程序需求\\assets\\temp\\product-luchang.jpg",
+      "cloudPath": "products/main/product-luchang.jpg",
+      "size": 36540
+    },
+    {
+      "fileName": "product-squid.jpg",
+      "localPath": "assets/temp/product-squid.jpg",
+      "absolutePath": "D:\\codex\\中货通小程序需求\\assets\\temp\\product-squid.jpg",
+      "cloudPath": "products/main/product-squid.jpg",
+      "size": 31133
+    },
+    {
+      "fileName": "topic-new.jpg",
+      "localPath": "assets/temp/topic-new.jpg",
+      "absolutePath": "D:\\codex\\中货通小程序需求\\assets\\temp\\topic-new.jpg",
+      "cloudPath": "home/topic/topic-new.jpg",
+      "size": 17793
+    }
+  ]
+}

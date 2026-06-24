@@ -1,6 +1,6 @@
-# 前呈似景供应链微信小程序
+# 前呈似景智链微信小程序
 
-前呈似景供应链微信小程序用于火锅串串食材客户订货与商家后台管理，一期采用微信原生小程序 + 微信云开发。
+前呈似景智链微信小程序用于火锅串串食材客户订货与商家后台管理，一期采用微信原生小程序 + 微信云开发。
 
 ## 当前范围
 
@@ -10,7 +10,7 @@
 
 ## 运行方式
 
-用微信开发者工具打开本目录即可。当前以本地 mock 数据为主，同时已拿到正式云环境配置，后续将按计划分批切换真实云数据。
+用微信开发者工具打开本目录即可。当前已切换为严格云联调模式，页面数据以云数据库和云函数为准；本地 mock 只保留为历史演示/开发兜底能力，默认不会参与页面读写。
 
 已确认环境：
 
@@ -23,11 +23,25 @@
 - [docs/CLOUD_INTEGRATION_PLAN.md](docs/CLOUD_INTEGRATION_PLAN.md)
 - [docs/CLOUD_SETUP_GUIDE.md](docs/CLOUD_SETUP_GUIDE.md)
 - [docs/CLOUD_SECURITY_RULES.md](docs/CLOUD_SECURITY_RULES.md)
+- [docs/CLOUD_STORAGE_GUIDE.md](docs/CLOUD_STORAGE_GUIDE.md)
+- [docs/CLOUD_IMAGE_UPLOAD_PLAN.md](docs/CLOUD_IMAGE_UPLOAD_PLAN.md)
 - [docs/BLOCKERS_AND_NEXT_STEPS.md](docs/BLOCKERS_AND_NEXT_STEPS.md)
+- [docs/WECHAT_REVIEW_CHECKLIST.md](docs/WECHAT_REVIEW_CHECKLIST.md)
+- [docs/WECHAT_PRIVACY_GUIDE.md](docs/WECHAT_PRIVACY_GUIDE.md)
+- [docs/WECHAT_REVIEW_NOTES.md](docs/WECHAT_REVIEW_NOTES.md)
+- [docs/CLOUD_NAME_SYNC_CHECKLIST.md](docs/CLOUD_NAME_SYNC_CHECKLIST.md)
+- [docs/WECHAT_PHONE_AUTH_DESIGN.md](docs/WECHAT_PHONE_AUTH_DESIGN.md)
 
 ## 图片说明
 
-当前预览使用 `assets/temp/` 中的裁剪压缩临时素材；原始参考截图已移到项目目录外的 `D:\codex\前呈似景供应链_参考截图_不参与打包`，避免影响手机预览。
+当前预览使用 `assets/temp/` 中的裁剪压缩临时素材；原始参考截图已移到项目目录外的 `D:\codex\前呈似景智链_参考截图_不参与打包`，避免影响手机预览。
+
+注意：
+
+- `seedDemo` 只会初始化数据库演示数据
+- 不会自动把项目图片上传到微信云存储
+- 云存储目录和图片字段口径见 [docs/CLOUD_STORAGE_GUIDE.md](docs/CLOUD_STORAGE_GUIDE.md)
+- 图片上传执行顺序与 manifest 脚本见 [docs/CLOUD_IMAGE_UPLOAD_PLAN.md](docs/CLOUD_IMAGE_UPLOAD_PLAN.md)
 
 ## 仍需后补
 

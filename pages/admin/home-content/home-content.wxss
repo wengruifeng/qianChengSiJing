@@ -1,3 +1,35 @@
 .btn-primary {
   margin-top: 24rpx;
 }
+
+.upload-card {
+  padding: 20rpx 0;
+  border-top: 1rpx solid #f0f2f5;
+}
+
+.upload-card:first-of-type {
+  border-top: none;
+}
+
+.upload-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.upload-preview {
+  width: 100%;
+  height: 220rpx;
+  margin-top: 16rpx;
+  border-radius: 8rpx;
+  background: #f5f7fb;
+}
+
+.upload-preview-banner {
+  height: 180rpx;
+}
+
+.upload-input {
+  margin-top: 16rpx;
+}

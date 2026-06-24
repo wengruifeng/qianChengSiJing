@@ -1,5 +1,5 @@
-const { getCurrentUser, requireLogin } = require('../../utils/auth');
-const { submitApply } = require('../../utils/customer-service');
+const { leaveRestrictedPageAfterLoginCancel, requireLogin } = require('../../utils/auth');
+const { saveAddress, submitApply } = require('../../utils/customer-service');
 
 Page({
   data: {
@@ -12,7 +12,10 @@ Page({
 
   onShow() {
     const user = requireLogin('/pages/apply/apply');
-    if (!user) return;
+    if (!user) {
+      leaveRestrictedPageAfterLoginCancel();
+      return;
+    }
     const map = { not_applied: '未申请', pending: '待审核', approved: '已通过', rejected: '已拒绝' };
     this.setData({
       user,
@@ -57,20 +60,19 @@ Page({
 
   saveDefaultAddress() {
     const user = this.data.user;
-    updateStore((store) => {
-      store.addresses.forEach((item) => {
-        if (item.userId === user.id) item.isDefault = false;
-      });
-      store.addresses.push({
-        id: nextId('addr'),
-        userId: user.id,
-        contactName: this.data.company,
-        phone: user.phone,
-        region: this.data.region,
-        detail: this.data.addressDetail,
-        isDefault: true
+    if (!user) return;
+    saveAddress({
+      contactName: this.data.company,
+      phone: user.phone,
+      region: this.data.region,
+      detail: this.data.addressDetail
+    }).then(() => {
+      wx.showToast({ title: '已保存默认地址' });
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '保存失败',
+        icon: 'none'
       });
     });
-    wx.showToast({ title: '已保存默认地址' });
   }
 });

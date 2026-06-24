@@ -4,16 +4,60 @@
     <view class="form-row"><view class="form-label">货品条码</view><input class="form-input" value="{{form.barcode}}" data-key="barcode" bindinput="onInput" placeholder="请输入货品条码" /></view>
     <view class="form-row"><view class="form-label">编货号</view><input class="form-input" value="{{form.code}}" data-key="code" bindinput="onInput" placeholder="请输入编货号" /></view>
     <view class="form-row"><view class="form-label">简拼</view><input class="form-input" value="{{form.simple}}" data-key="simple" bindinput="onInput" placeholder="请输入简拼" /></view>
-    <view class="form-row"><view class="form-label">分类ID*</view><input class="form-input" value="{{form.categoryId}}" data-key="categoryId" bindinput="onInput" placeholder="如 cat_1" /></view>
+    <view class="form-row" bindtap="openCategoryPicker">
+      <view class="form-label">分类*</view>
+      <view class="form-value {{categoryName ? '' : 'placeholder'}}">{{categoryName || '请选择分类'}}</view>
+      <view class="form-arrow">›</view>
+    </view>
     <view class="form-row"><view class="form-label">销售价*</view><input class="form-input" type="digit" value="{{form.price}}" data-key="price" bindinput="onInput" placeholder="请输入销售价" /></view>
     <view class="form-row"><view class="form-label">库存*</view><input class="form-input" type="number" value="{{form.stock}}" data-key="stock" bindinput="onInput" placeholder="请输入库存" /></view>
     <view class="form-row"><view class="form-label">预警库存</view><input class="form-input" type="number" value="{{form.warningStock}}" data-key="warningStock" bindinput="onInput" placeholder="请输入预警库存" /></view>
     <view class="form-row"><view class="form-label">规格说明</view><input class="form-input" value="{{form.spec}}" data-key="spec" bindinput="onInput" placeholder="如 1kg*10包/件" /></view>
     <view class="form-row"><view class="form-label">单位</view><input class="form-input" value="{{form.unit}}" data-key="unit" bindinput="onInput" placeholder="件/包/箱" /></view>
-    <view class="form-row"><view class="form-label">主图路径</view><input class="form-input" value="{{form.mainImage}}" data-key="mainImage" bindinput="onInput" placeholder="云存储 fileID 或本地路径" /></view>
+    <view class="upload-block">
+      <view class="upload-head">
+        <view class="form-label">商品主图</view>
+        <button class="small-btn" bindtap="uploadMainImage" loading="{{uploadingMain}}">上传主图</button>
+      </view>
+      <image wx:if="{{form.mainImage}}" class="upload-preview" src="{{form.mainImage}}" mode="aspectFill"></image>
+      <input class="form-input upload-input" value="{{form.mainImage}}" data-key="mainImage" bindinput="onInput" placeholder="云存储 fileID" />
+    </view>
+    <view class="upload-block">
+      <view class="upload-head">
+        <view class="form-label">详情图</view>
+        <button class="small-btn" bindtap="uploadDetailImages" loading="{{uploadingDetail}}">上传详情图</button>
+      </view>
+      <view class="detail-grid" wx:if="{{form.detailImages && form.detailImages.length}}">
+        <view class="detail-item" wx:for="{{form.detailImages}}" wx:key="*this">
+          <image class="detail-image" src="{{item}}" mode="aspectFill"></image>
+          <view class="detail-remove" bindtap="removeDetailImage" data-index="{{index}}">删除</view>
+        </view>
+      </view>
+      <view class="muted upload-tip" wx:else>暂未上传详情图</view>
+    </view>
     <view class="form-row"><view class="form-label">标签</view><input class="form-input" value="{{tagText}}" bindinput="onTags" placeholder="新品,推荐,热销" /></view>
     <view class="form-row"><view class="form-label">是否上架</view><switch checked="{{form.saleStatus === 'on'}}" bindchange="onSale"></switch></view>
+    <textarea class="desc" placeholder="商品描述" value="{{form.description}}" data-key="description" bindinput="onInput"></textarea>
   </view>
-  <textarea class="desc" placeholder="商品描述" value="{{form.description}}" data-key="description" bindinput="onInput"></textarea>
-  <button class="btn-primary" bindtap="submit">提交审核</button>
+  <view class="submit-wrap">
+    <view class="submit-btn-view {{submitting ? 'is-loading' : ''}}" catchtap="submit">
+      {{submitting ? '提交中...' : '提交审核'}}
+    </view>
+  </view>
+  <view wx:if="{{showCategoryPicker}}" class="picker-mask" catchtap="closeCategoryPicker">
+    <view class="picker-panel" catchtap="noop">
+      <view class="picker-head">
+        <view class="picker-title">选择分类</view>
+        <view class="picker-close" bindtap="closeCategoryPicker">关闭</view>
+      </view>
+      <input class="picker-search" value="{{categoryKeyword}}" bindinput="onCategoryKeyword" placeholder="搜索分类名称" />
+      <scroll-view class="picker-list" scroll-y>
+        <view wx:if="{{!filteredCategories.length}}" class="picker-empty">没有匹配分类</view>
+        <view class="picker-item {{form.categoryId === item.id ? 'active' : ''}}" wx:for="{{filteredCategories}}" wx:key="id" bindtap="chooseCategory" data-id="{{item.id}}">
+          <text>{{item.name}}</text>
+          <text wx:if="{{form.categoryId === item.id}}">已选</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
 </view>

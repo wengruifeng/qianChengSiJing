@@ -2,8 +2,30 @@
   <view class="form-card">
     <view class="form-row"><view class="form-label">主标题</view><input class="form-input" value="{{form.bannerTitle}}" data-key="bannerTitle" bindinput="onInput" /></view>
     <view class="form-row"><view class="form-label">滚动公告</view><input class="form-input" value="{{form.notice}}" data-key="notice" bindinput="onInput" /></view>
-    <view class="form-row"><view class="form-label">首页主图</view><input class="form-input" value="{{form.heroImage}}" data-key="heroImage" bindinput="onInput" /></view>
-    <view class="form-row"><view class="form-label">专题横幅</view><input class="form-input" value="{{form.topicImage}}" data-key="topicImage" bindinput="onInput" /></view>
+    <view class="upload-card">
+      <view class="upload-head">
+        <view class="form-label">Logo</view>
+        <button class="small-btn" bindtap="uploadImage" data-key="logo" data-scope="logo" loading="{{uploadingKey === 'logo'}}">上传图片</button>
+      </view>
+      <image wx:if="{{form.logoImage}}" class="upload-preview" src="{{form.logoImage}}" mode="aspectFill"></image>
+      <input class="form-input upload-input" value="{{form.logoImage}}" data-key="logoImage" bindinput="onInput" placeholder="云存储 fileID" />
+    </view>
+    <view class="upload-card">
+      <view class="upload-head">
+        <view class="form-label">首页主图</view>
+        <button class="small-btn" bindtap="uploadImage" data-key="hero" data-scope="hero" loading="{{uploadingKey === 'hero'}}">上传图片</button>
+      </view>
+      <image wx:if="{{form.heroImage}}" class="upload-preview" src="{{form.heroImage}}" mode="aspectFill"></image>
+      <input class="form-input upload-input" value="{{form.heroImage}}" data-key="heroImage" bindinput="onInput" placeholder="云存储 fileID" />
+    </view>
+    <view class="upload-card">
+      <view class="upload-head">
+        <view class="form-label">专题横幅</view>
+        <button class="small-btn" bindtap="uploadImage" data-key="topic" data-scope="topic" loading="{{uploadingKey === 'topic'}}">上传图片</button>
+      </view>
+      <image wx:if="{{form.topicImage}}" class="upload-preview upload-preview-banner" src="{{form.topicImage}}" mode="aspectFill"></image>
+      <input class="form-input upload-input" value="{{form.topicImage}}" data-key="topicImage" bindinput="onInput" placeholder="云存储 fileID" />
+    </view>
   </view>
   <button class="btn-primary" bindtap="submit">提交审核</button>
 </view>

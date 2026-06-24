@@ -1,0 +1,12 @@
+<view class="page">
+  <view class="hero card">
+    <view class="hero-title">{{title}}</view>
+    <view class="hero-sub">前呈似景智链微信小程序</view>
+  </view>
+
+  <view class="section card" wx:for="{{blocks}}" wx:key="heading">
+    <view class="section-heading">{{item.heading}}</view>
+    <view class="section-body">{{item.body}}</view>
+  </view>
+</view>
+

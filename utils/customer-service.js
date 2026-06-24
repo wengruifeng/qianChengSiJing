@@ -1,4 +1,4 @@
-const { callCloud, canUseCloud } = require('./cloud');
+const { cloudFirst } = require('./cloud');
 const { runtime } = require('./config');
 const { getStore, updateStore, nextId, nowText } = require('./store');
 const { getCurrentUser } = require('./auth');
@@ -10,25 +10,12 @@ const statusMap = {
   rejected: '已拒绝'
 };
 
-function cloudFirst(action, payload, fallback) {
-  if (runtime.mode === 'cloud-first' && canUseCloud()) {
-    return callCloud(action, payload).then((res) => {
-      if (res.ok) return res.data;
-      if (runtime.fallbackToMock) return fallback();
-      throw new Error(res.message || `${action} failed`);
-    }).catch((error) => {
-      if (runtime.fallbackToMock) return fallback();
-      throw error;
-    });
-  }
-  return Promise.resolve(fallback());
-}
-
 function updateCachedUser(user) {
   if (!user) return;
   wx.setStorageSync('zht_current_user_cache', user);
   wx.setStorageSync('zht_current_user_id', user.id);
   wx.setStorageSync('zht_current_user_phone', user.phone || '');
+  if (!runtime.localMockEnabled) return;
   updateStore((store) => {
     const index = store.users.findIndex((item) => item.id === user.id || item.phone === user.phone);
     if (index >= 0) {
@@ -97,7 +84,7 @@ function fetchAddressesByCurrentUser() {
 }
 
 function fetchCustomers() {
-  return cloudFirst('listCustomers', {}, () => {
+  return fetchAllPagedCustomers(() => {
     const store = getStore();
     return store.users
       .filter((item) => item.role === 'customer' || item.customerStatus)
@@ -142,7 +129,7 @@ function reviewCustomer(payload) {
 }
 
 function fetchCustomerDetail(id) {
-  return cloudFirst('getCustomerDetail', { id }, () => {
+  return cloudFirst('getCustomerDetail', { id, logsPage: 1, logsPageSize: 20 }, () => {
     const store = getStore();
     const customer = store.users.find((item) => item.id === id);
     const orders = store.orders.filter((item) => item.userId === id);
@@ -150,19 +137,84 @@ function fetchCustomerDetail(id) {
     const logs = store.operationLogs.filter((item) => item.operatorId === id || item.target === customer.phone).slice(0, 20);
     return {
       customer,
-      orders,
+      orderCount: orders.length,
+      orderAmount: orders.reduce((sum, item) => sum + Number(item.amount || 0), 0).toFixed(2),
+      latestOrders: orders.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 5),
       addresses,
-      logs
+      logs,
+      logsPage: 1,
+      logsPageSize: 20,
+      logsTotal: logs.length,
+      logsHasMore: false
     };
   });
+}
+
+function fetchCustomerLogsPage(id, logsPage = 1, logsPageSize = 20) {
+  return cloudFirst('getCustomerDetail', { id, logsPage, logsPageSize }, () => {
+    const store = getStore();
+    const customer = store.users.find((item) => item.id === id);
+    const logs = store.operationLogs
+      .filter((item) => item.operatorId === id || (customer && item.target === customer.phone))
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    const start = (logsPage - 1) * logsPageSize;
+    return {
+      logs: logs.slice(start, start + logsPageSize),
+      logsPage,
+      logsPageSize,
+      logsTotal: logs.length,
+      logsHasMore: start + logsPageSize < logs.length
+    };
+  }).then((data) => ({
+    logs: data.logs || [],
+    logsPage: data.logsPage || logsPage,
+    logsPageSize: data.logsPageSize || logsPageSize,
+    logsTotal: typeof data.logsTotal === 'number' ? data.logsTotal : (data.logs || []).length,
+    logsHasMore: !!data.logsHasMore
+  }));
 }
 
 module.exports = {
   fetchAddressesByCurrentUser,
   fetchCustomerDetail,
+  fetchCustomerLogsPage,
   fetchCustomers,
   reviewCustomer,
   saveAddress,
   statusMap,
   submitApply
 };
+
+function normalizeCustomerPageResult(result) {
+  if (Array.isArray(result)) {
+    return {
+      items: result,
+      page: 1,
+      pageSize: result.length,
+      total: result.length,
+      hasMore: false
+    };
+  }
+  return {
+    items: result && Array.isArray(result.items) ? result.items : [],
+    page: result && result.page ? result.page : 1,
+    pageSize: result && result.pageSize ? result.pageSize : 20,
+    total: result && typeof result.total === 'number' ? result.total : 0,
+    hasMore: !!(result && result.hasMore)
+  };
+}
+
+function fetchAllPagedCustomers(fallback) {
+  const pageSize = 50;
+  return cloudFirst('listCustomers', { page: 1, pageSize }, fallback).then((firstResult) => {
+    const normalizedFirst = normalizeCustomerPageResult(firstResult);
+    if (!normalizedFirst.hasMore) {
+      return normalizedFirst.items;
+    }
+    const tasks = [];
+    for (let page = 2; page <= Math.ceil(normalizedFirst.total / pageSize); page += 1) {
+      tasks.push(cloudFirst('listCustomers', { page, pageSize }, fallback).then(normalizeCustomerPageResult));
+    }
+    return Promise.all(tasks).then((results) => normalizedFirst.items.concat(results.flatMap((result) => result.items)));
+  });
+}
