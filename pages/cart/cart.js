@@ -30,6 +30,9 @@ Page({
     total: '0.00'
   },
 
+  lastManualCategoryId: '',
+  autoCategoryKeyword: '',
+
   onShow() {
     Promise.all([
       refreshCurrentUser(),
@@ -38,6 +41,7 @@ Page({
     ]).then(([user, categories, products]) => {
       const currentUser = user || getCurrentUser();
       const activeCategoryId = this.data.activeCategoryId || (categories[0] && categories[0].id) || '';
+      this.lastManualCategoryId = activeCategoryId;
       this.setData({
         categories: categories.map((item) => ({ ...item, active: item.id === activeCategoryId })),
         products: products.map(enrichProduct),
@@ -64,12 +68,37 @@ Page({
 
   filterProducts() {
     const keyword = this.data.keyword.trim().toLowerCase();
-    const filteredProducts = this.data.products.filter((item) => {
-      const inCategory = !this.data.activeCategoryId || item.categoryId === this.data.activeCategoryId;
+    const matchesKeyword = (item) => {
       const text = `${item.name}${item.barcode}${item.code}${item.simple}`.toLowerCase();
-      return inCategory && (!keyword || text.includes(keyword));
+      return !keyword || text.includes(keyword);
+    };
+
+    let activeCategoryId = this.data.activeCategoryId;
+    if (keyword) {
+      const categoryMatchedProducts = this.data.products.filter((item) => item.categoryId === activeCategoryId && matchesKeyword(item));
+      const shouldAutoSwitch = this.autoCategoryKeyword !== keyword;
+      if (shouldAutoSwitch && !categoryMatchedProducts.length) {
+        const firstMatched = this.data.products.find(matchesKeyword);
+        if (firstMatched) {
+          activeCategoryId = firstMatched.categoryId || '';
+        }
+      }
+      this.autoCategoryKeyword = keyword;
+    } else {
+      activeCategoryId = this.lastManualCategoryId || activeCategoryId;
+      this.autoCategoryKeyword = '';
+    }
+
+    const filteredProducts = this.data.products.filter((item) => {
+      const inCategory = !activeCategoryId || item.categoryId === activeCategoryId;
+      return inCategory && matchesKeyword(item);
     });
-    this.setData({ filteredProducts });
+
+    this.setData({
+      activeCategoryId,
+      categories: this.data.categories.map((item) => ({ ...item, active: item.id === activeCategoryId })),
+      filteredProducts
+    });
   },
 
   refreshCartSummary() {
@@ -92,6 +121,8 @@ Page({
 
   changeCategory(event) {
     const activeCategoryId = event.currentTarget.dataset.id;
+    this.lastManualCategoryId = activeCategoryId;
+    this.autoCategoryKeyword = this.data.keyword.trim().toLowerCase();
     this.setData({
       activeCategoryId,
       categories: this.data.categories.map((item) => ({ ...item, active: item.id === activeCategoryId }))

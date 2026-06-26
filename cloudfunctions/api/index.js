@@ -93,6 +93,40 @@ async function fetchAllCollection(buildQuery, { pageSize = 100, orderBy, orderDi
   return items;
 }
 
+async function fetchCollectionByFieldValues(collectionName, field, values, { pageSize = 100, orderBy, orderDirection = 'desc', extraWhere = {} } = {}) {
+  const uniqueValues = Array.from(new Set((values || []).filter(Boolean)));
+  if (!uniqueValues.length) return [];
+
+  const chunkSize = 20;
+  const chunks = [];
+  for (let i = 0; i < uniqueValues.length; i += chunkSize) {
+    chunks.push(uniqueValues.slice(i, i + chunkSize));
+  }
+
+  const results = await Promise.all(chunks.map((chunk) => fetchAllCollection(
+    () => db.collection(collectionName).where({
+      ...extraWhere,
+      [field]: _.in(chunk)
+    }),
+    {
+      pageSize,
+      orderBy,
+      orderDirection
+    }
+  )));
+
+  return results.flatMap((items) => items);
+}
+
+async function fetchProductsByIds(productIds, extraWhere = {}) {
+  return fetchCollectionByFieldValues('products', 'id', productIds, {
+    pageSize: 100,
+    orderBy: 'sort',
+    orderDirection: 'asc',
+    extraWhere
+  });
+}
+
 function maskPhone(phone) {
   if (!phone || phone.length < 7) return phone || '';
   return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
@@ -331,40 +365,53 @@ async function getCurrentUser(payload) {
 }
 
 async function listCategories() {
-  const res = await db.collection('categories')
-    .where({ status: 'enabled' })
-    .orderBy('sort', 'asc')
-    .limit(100)
-    .get();
-  return ok(res.data.filter((item) => item.deleteStatus !== 'deleted'));
+  const items = await fetchAllCollection(
+    () => db.collection('categories').where({ status: 'enabled' }),
+    {
+      pageSize: 100,
+      orderBy: 'sort',
+      orderDirection: 'asc'
+    }
+  );
+  return ok(items.filter((item) => item.deleteStatus !== 'deleted'));
 }
 
 async function listCategoriesForAdmin() {
   await requireAdminCloudUser();
-  const res = await db.collection('categories')
-    .orderBy('sort', 'asc')
-    .limit(100)
-    .get();
-  return ok(res.data.filter((item) => item.deleteStatus !== 'deleted'));
+  const items = await fetchAllCollection(
+    () => db.collection('categories'),
+    {
+      pageSize: 100,
+      orderBy: 'sort',
+      orderDirection: 'asc'
+    }
+  );
+  return ok(items.filter((item) => item.deleteStatus !== 'deleted'));
 }
 
 async function listProducts() {
-  const res = await db.collection('products')
-    .where({ deleteStatus: 'normal', saleStatus: 'on' })
-    .orderBy('sort', 'asc')
-    .limit(200)
-    .get();
-  return ok(res.data);
+  const items = await fetchAllCollection(
+    () => db.collection('products').where({ deleteStatus: 'normal', saleStatus: 'on' }),
+    {
+      pageSize: 100,
+      orderBy: 'sort',
+      orderDirection: 'asc'
+    }
+  );
+  return ok(items);
 }
 
 async function listAdminProducts() {
   await requireAdminCloudUser();
-  const res = await db.collection('products')
-    .where({ deleteStatus: 'normal' })
-    .orderBy('sort', 'asc')
-    .limit(200)
-    .get();
-  return ok(res.data);
+  const items = await fetchAllCollection(
+    () => db.collection('products').where({ deleteStatus: 'normal' }),
+    {
+      pageSize: 100,
+      orderBy: 'sort',
+      orderDirection: 'asc'
+    }
+  );
+  return ok(items);
 }
 
 async function getProduct(payload) {
@@ -382,15 +429,19 @@ async function getHomeContent() {
 
 async function listCartItems(payload) {
   const user = await requireCurrentCloudUser();
-  const cartRes = await db.collection('carts').where({ userId: user.id }).get();
-  const cartItems = cartRes.data;
-  const result = [];
-  for (const item of cartItems) {
-    const productRes = await db.collection('products').where({ id: item.productId }).limit(1).get();
-    const product = productRes.data[0] || null;
-    if (product) result.push({ ...item, product });
-  }
-  return ok(result);
+  const cartItems = await fetchAllCollection(
+    () => db.collection('carts').where({ userId: user.id }),
+    {
+      pageSize: 100,
+      orderBy: 'id',
+      orderDirection: 'desc'
+    }
+  );
+  const products = await fetchProductsByIds(cartItems.map((item) => item.productId));
+  const productMap = new Map(products.map((item) => [item.id, item]));
+  return ok(cartItems
+    .map((item) => ({ ...item, product: productMap.get(item.productId) || null }))
+    .filter((item) => item.product));
 }
 
 async function addToCart(payload) {
@@ -517,8 +568,15 @@ async function listAddresses(payload) {
   if (userId && userId !== currentUser.id) {
     throw new Error('ADDRESS_PERMISSION_DENIED');
   }
-  const res = await db.collection('addresses').where({ userId: currentUser.id }).get();
-  return ok(res.data);
+  const items = await fetchAllCollection(
+    () => db.collection('addresses').where({ userId: currentUser.id }),
+    {
+      pageSize: 100,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    }
+  );
+  return ok(items);
 }
 
 async function listCustomers(payload = {}) {
@@ -533,19 +591,33 @@ async function listCustomers(payload = {}) {
     }
   );
   const users = pagedUsers.items;
-  const customers = await Promise.all(users.map(async (item) => {
-    const [customerOrders, customerAddresses] = await Promise.all([
-      fetchAllCollection(() => db.collection('orders').where({ userId: item.id }), {
-        pageSize: 100,
-        orderBy: 'createdAt',
-        orderDirection: 'desc'
-      }),
-      fetchAllCollection(() => db.collection('addresses').where({ userId: item.id }), {
-        pageSize: 100,
-        orderBy: 'createdAt',
-        orderDirection: 'desc'
-      })
-    ]);
+  const userIds = users.map((item) => item.id);
+  const [orders, addresses] = await Promise.all([
+    fetchCollectionByFieldValues('orders', 'userId', userIds, {
+      pageSize: 100,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    }),
+    fetchCollectionByFieldValues('addresses', 'userId', userIds, {
+      pageSize: 100,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    })
+  ]);
+  const orderStatsMap = {};
+  orders.forEach((item) => {
+    if (!orderStatsMap[item.userId]) {
+      orderStatsMap[item.userId] = { count: 0, amount: 0 };
+    }
+    orderStatsMap[item.userId].count += 1;
+    orderStatsMap[item.userId].amount += Number(item.amount || 0);
+  });
+  const addressCountMap = {};
+  addresses.forEach((item) => {
+    addressCountMap[item.userId] = (addressCountMap[item.userId] || 0) + 1;
+  });
+  const customers = users.map((item) => {
+    const orderStats = orderStatsMap[item.id] || { count: 0, amount: 0 };
     return {
       ...item,
       displayName: item.company || item.nickName,
@@ -556,11 +628,11 @@ async function listCustomers(payload = {}) {
         rejected: '已拒绝'
       })[item.customerStatus] || '未申请',
       statusClass: `status-${item.customerStatus || 'not_applied'}`,
-      orderCount: customerOrders.length,
-      totalAmount: customerOrders.reduce((sum, order) => sum + Number(order.amount || 0), 0).toFixed(2),
-      addressCount: customerAddresses.length
+      orderCount: orderStats.count,
+      totalAmount: orderStats.amount.toFixed(2),
+      addressCount: addressCountMap[item.id] || 0
     };
-  }));
+  });
   return ok({
     items: customers,
     page: pagedUsers.page,
@@ -573,12 +645,15 @@ async function listCustomers(payload = {}) {
 async function listAdmins(payload = {}) {
   await requireProtectedSuperAdminCloudUser();
   const role = payload.role === 'super_admin' ? 'super_admin' : 'admin';
-  const res = await db.collection('admins')
-    .where({ status: 'enabled', role })
-    .orderBy('createdAt', 'desc')
-    .limit(100)
-    .get();
-  return ok(res.data.filter((item) => item.deleteStatus !== 'deleted'));
+  const items = await fetchAllCollection(
+    () => db.collection('admins').where({ status: 'enabled', role }),
+    {
+      pageSize: 100,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    }
+  );
+  return ok(items.filter((item) => item.deleteStatus !== 'deleted'));
 }
 
 async function addAdmin(payload) {
@@ -663,8 +738,15 @@ async function updateAdmin(payload) {
     return fail('特殊超级管理员不能修改手机号', 'ADMIN_PROTECTED_PHONE_LOCKED');
   }
 
-  const duplicateRes = await db.collection('admins').where({ phone }).limit(10).get();
-  const duplicate = duplicateRes.data.find((item) => item.id !== id && item.deleteStatus !== 'deleted');
+  const duplicateItems = await fetchAllCollection(
+    () => db.collection('admins').where({ phone }),
+    {
+      pageSize: 50,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    }
+  );
+  const duplicate = duplicateItems.find((item) => item.id !== id && item.deleteStatus !== 'deleted');
   if (duplicate) return fail('该手机号已是后台账号', 'ADMIN_PHONE_DUPLICATED');
 
   const now = nowText();
@@ -876,9 +958,11 @@ async function getCustomerDetail(payload) {
 
 async function listOrderItemsByOrderIds(orderIds) {
   if (!orderIds.length) return [];
-  const tasks = orderIds.map((id) => db.collection('order_items').where({ orderId: id }).get());
-  const results = await Promise.all(tasks);
-  return results.flatMap((res) => res.data);
+  return fetchCollectionByFieldValues('order_items', 'orderId', orderIds, {
+    pageSize: 100,
+    orderBy: 'id',
+    orderDirection: 'asc'
+  });
 }
 
 function attachItemsToOrders(orders, items) {
@@ -906,11 +990,15 @@ async function createOrder(payload) {
   }
   if (!addressSnapshot) return fail('请选择收货地址', 'ADDRESS_REQUIRED');
 
+  const sourceProducts = await fetchProductsByIds(
+    items.map((item) => item.productId),
+    { deleteStatus: 'normal', saleStatus: 'on' }
+  );
+  const productMap = new Map(sourceProducts.map((item) => [item.id, item]));
   const orderProducts = [];
   let amount = 0;
   for (const item of items) {
-    const productRes = await db.collection('products').where({ id: item.productId, deleteStatus: 'normal', saleStatus: 'on' }).limit(1).get();
-    const product = productRes.data[0] || null;
+    const product = productMap.get(item.productId) || null;
     if (!product) return fail('存在不可下单商品', 'PRODUCT_NOT_FOUND');
     const availableStock = Math.max(0, Number(product.stock || 0) - Number(product.lockedStock || 0));
     if (availableStock < item.quantity) {
@@ -970,8 +1058,15 @@ async function createOrder(payload) {
 
   const cartIds = items.map((item) => item.cartId).filter(Boolean);
   if (cartIds.length) {
-    const cartRes = await db.collection('carts').where({ userId: user.id }).get();
-    for (const cartItem of cartRes.data) {
+    const cartItems = await fetchAllCollection(
+      () => db.collection('carts').where({ userId: user.id }),
+      {
+        pageSize: 100,
+        orderBy: 'id',
+        orderDirection: 'desc'
+      }
+    );
+    for (const cartItem of cartItems) {
       if (cartIds.includes(cartItem.id)) {
         await db.collection('carts').doc(cartItem._id).remove();
       }
@@ -1036,10 +1131,17 @@ async function getOrderDetail(payload) {
   if (!isAdminRole(currentUser.role) && order.userId !== currentUser.id) {
     throw new Error('ORDER_PERMISSION_DENIED');
   }
-  const itemRes = await db.collection('order_items').where({ orderId: id }).get();
+  const items = await fetchAllCollection(
+    () => db.collection('order_items').where({ orderId: id }),
+    {
+      pageSize: 100,
+      orderBy: 'id',
+      orderDirection: 'asc'
+    }
+  );
   return ok({
     ...order,
-    items: itemRes.data
+    items
   });
 }
 
@@ -1058,11 +1160,18 @@ async function confirmReceive(payload) {
     completedAt: nowText()
   };
   await db.collection('orders').doc(order._id).update({ data: patch });
-  const itemsRes = await db.collection('order_items').where({ orderId: id }).get();
+  const items = await fetchAllCollection(
+    () => db.collection('order_items').where({ orderId: id }),
+    {
+      pageSize: 100,
+      orderBy: 'id',
+      orderDirection: 'asc'
+    }
+  );
   return ok({
     ...order,
     ...patch,
-    items: itemsRes.data
+    items
   });
 }
 
@@ -1098,14 +1207,21 @@ async function updateOrderStatus(payload) {
   const orderRes = await db.collection('orders').where({ id }).limit(1).get();
   const order = orderRes.data[0] || null;
   if (!order) return fail('订单不存在', 'ORDER_NOT_FOUND');
-  const itemsRes = await db.collection('order_items').where({ orderId: id }).get();
-  const items = itemsRes.data;
+  const items = await fetchAllCollection(
+    () => db.collection('order_items').where({ orderId: id }),
+    {
+      pageSize: 100,
+      orderBy: 'id',
+      orderDirection: 'asc'
+    }
+  );
   const oldStatus = order.status;
+  const relatedProducts = await fetchProductsByIds(items.map((item) => item.productId));
+  const productMap = new Map(relatedProducts.map((item) => [item.id, item]));
 
   if (oldStatus !== 'confirmed' && nextStatus === 'confirmed') {
     for (const item of items) {
-      const productRes = await db.collection('products').where({ id: item.productId }).limit(1).get();
-      const product = productRes.data[0] || null;
+      const product = productMap.get(item.productId) || null;
       if (product) {
         await db.collection('products').doc(product._id).update({
           data: {
@@ -1120,8 +1236,7 @@ async function updateOrderStatus(payload) {
 
   if (nextStatus === 'cancelled' && oldStatus !== 'confirmed') {
     for (const item of items) {
-      const productRes = await db.collection('products').where({ id: item.productId }).limit(1).get();
-      const product = productRes.data[0] || null;
+      const product = productMap.get(item.productId) || null;
       if (product) {
         await db.collection('products').doc(product._id).update({
           data: {

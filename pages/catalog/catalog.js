@@ -12,6 +12,9 @@ Page({
     canSeePrice: false
   },
 
+  lastManualCategoryId: '',
+  autoCategoryKeyword: '',
+
   onLoad(options) {
     this.initialCategoryId = options.categoryId || '';
     this.initialKeyword = options.keyword || '';
@@ -23,10 +26,12 @@ Page({
       fetchCategories(),
       fetchVisibleProducts()
     ]).then(([, categories, products]) => {
+      const activeCategoryId = this.data.activeCategoryId || this.initialCategoryId || (categories[0] && categories[0].id) || '';
+      this.lastManualCategoryId = activeCategoryId;
       this.setData({
         categories,
         products,
-        activeCategoryId: this.data.activeCategoryId || this.initialCategoryId || (categories[0] && categories[0].id) || '',
+        activeCategoryId,
         keyword: this.data.keyword || decodeURIComponent(this.initialKeyword || ''),
         canSeePrice: canSeePrice()
       }, this.filterProducts);
@@ -42,12 +47,37 @@ Page({
 
   filterProducts() {
     const keyword = this.data.keyword.trim().toLowerCase();
-    const filteredProducts = this.data.products.filter((item) => {
-      const inCategory = !this.data.activeCategoryId || item.categoryId === this.data.activeCategoryId;
+    const matchesKeyword = (item) => {
       const text = `${item.name}${item.barcode}${item.code}${item.simple}`.toLowerCase();
-      return inCategory && (!keyword || text.includes(keyword));
+      return !keyword || text.includes(keyword);
+    };
+
+    let activeCategoryId = this.data.activeCategoryId;
+    if (keyword) {
+      const categoryMatchedProducts = this.data.products.filter((item) => item.categoryId === activeCategoryId && matchesKeyword(item));
+      const shouldAutoSwitch = this.autoCategoryKeyword !== keyword;
+      if (shouldAutoSwitch && !categoryMatchedProducts.length) {
+        const firstMatched = this.data.products.find(matchesKeyword);
+        if (firstMatched) {
+          activeCategoryId = firstMatched.categoryId || '';
+        }
+      }
+      this.autoCategoryKeyword = keyword;
+    } else {
+      activeCategoryId = this.lastManualCategoryId || activeCategoryId;
+      this.autoCategoryKeyword = '';
+    }
+
+    const filteredProducts = this.data.products.filter((item) => {
+      const inCategory = !activeCategoryId || item.categoryId === activeCategoryId;
+      return inCategory && matchesKeyword(item);
     });
-    this.setData({ filteredProducts });
+
+    this.setData({
+      activeCategoryId,
+      categories: this.data.categories.map((item) => ({ ...item, active: item.id === activeCategoryId })),
+      filteredProducts
+    });
   },
 
   onKeyword(event) {
@@ -55,7 +85,13 @@ Page({
   },
 
   changeCategory(event) {
-    this.setData({ activeCategoryId: event.currentTarget.dataset.id }, this.filterProducts);
+    const activeCategoryId = event.currentTarget.dataset.id;
+    this.lastManualCategoryId = activeCategoryId;
+    this.autoCategoryKeyword = this.data.keyword.trim().toLowerCase();
+    this.setData({
+      activeCategoryId,
+      categories: this.data.categories.map((item) => ({ ...item, active: item.id === activeCategoryId }))
+    }, this.filterProducts);
   },
 
   openProduct(event) {
