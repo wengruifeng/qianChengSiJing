@@ -1,6 +1,7 @@
 const { addToCart } = require('../../utils/cart-service');
 const { canSeePrice, refreshCurrentUser, requireLogin } = require('../../utils/auth');
 const { fetchProductById } = require('../../utils/catalog-service');
+const { APP_NAME } = require('../../utils/config');
 
 Page({
   data: {
@@ -69,5 +70,37 @@ Page({
   goCart() {
     if (!this.data.canSeePrice) return;
     wx.switchTab({ url: '/pages/cart/cart' });
+  },
+
+  onShareAppMessage() {
+    const product = this.data.product;
+    if (!product || !product.id) {
+      return {
+        title: `${APP_NAME}，火锅串串食材选购平台`,
+        path: '/pages/index/index'
+      };
+    }
+    const imageUrl = product.mainImage || (product.imageList && product.imageList[0]) || '';
+    return {
+      title: `给你推荐一个商品：${product.name}`,
+      path: `/pages/product/product?id=${encodeURIComponent(product.id)}`,
+      imageUrl
+    };
+  },
+
+  onShareTimeline() {
+    const product = this.data.product;
+    if (!product || !product.id) {
+      return {
+        title: `${APP_NAME}，火锅串串食材选购平台`,
+        query: ''
+      };
+    }
+    const imageUrl = product.mainImage || (product.imageList && product.imageList[0]) || '';
+    return {
+      title: `给你推荐一个商品：${product.name}`,
+      query: `id=${encodeURIComponent(product.id)}`,
+      imageUrl
+    };
   }
 });

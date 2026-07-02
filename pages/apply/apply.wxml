@@ -10,7 +10,9 @@
     </view>
     <view class="form-row">
       <view class="form-label">所在地区</view>
-      <input class="form-input" placeholder="请选择地址" value="{{region}}" bindinput="onRegion" />
+      <picker mode="region" value="{{regionParts}}" bindchange="onRegionChange">
+        <view class="form-input {{region ? '' : 'placeholder'}}">{{region || '请选择地址'}}</view>
+      </picker>
     </view>
     <view class="form-row">
       <view class="form-label">详细地址</view>
@@ -21,4 +23,3 @@
   <button wx:if="{{user && user.customerStatus === 'approved'}}" class="save-address" bindtap="saveDefaultAddress">保存为默认收货地址</button>
   <button class="submit" bindtap="submit">提交申请</button>
 </view>
-

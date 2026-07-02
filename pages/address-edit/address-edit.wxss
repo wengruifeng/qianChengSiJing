@@ -1,0 +1,22 @@
+.address-edit-page {
+  min-height: 100vh;
+  padding-bottom: 140rpx;
+}
+
+.form-card {
+  margin-top: 24rpx;
+}
+
+.form-title {
+  margin-bottom: 12rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #243042;
+}
+
+.btn-primary {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 34rpx;
+}

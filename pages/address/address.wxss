@@ -3,13 +3,39 @@
   margin-bottom: 18rpx;
 }
 
+.addr-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+.addr-action {
+  min-width: 120rpx;
+  height: 56rpx;
+  padding: 0 20rpx;
+  border-radius: 28rpx;
+  background: #edf6ff;
+  color: #1592f5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  box-sizing: border-box;
+}
+
+.addr-action.danger {
+  background: #fff1f1;
+  color: #e25a5a;
+}
+
+.addr-action.disabled {
+  background: #f3f5f7;
+  color: #a8b0ba;
+}
+
 .name {
   font-size: 32rpx;
   font-weight: 700;
-}
-
-.edit {
-  margin-top: 24rpx;
 }
 
 .btn-primary {

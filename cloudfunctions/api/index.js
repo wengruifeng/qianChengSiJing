@@ -562,6 +562,94 @@ async function saveAddress(payload) {
   return ok(address);
 }
 
+async function updateAddress(payload) {
+  const { id, form = {} } = payload;
+  const { contactName, phone, region, detail } = form;
+  if (!id) return fail('缺少地址 ID', 'ADDRESS_ID_REQUIRED');
+  if (!contactName || !phone || !region || !detail) {
+    return fail('请填写完整地址', 'ADDRESS_FIELDS_REQUIRED');
+  }
+  const user = await requireCurrentCloudUser();
+  const addressRes = await db.collection('addresses').where({ id, userId: user.id }).limit(1).get();
+  const address = addressRes.data[0] || null;
+  if (!address) return fail('地址不存在', 'ADDRESS_NOT_FOUND');
+  const patch = {
+    contactName,
+    phone,
+    region,
+    detail,
+    updatedAt: nowText()
+  };
+  await db.collection('addresses').doc(address._id).update({ data: patch });
+  return ok({
+    ...address,
+    ...patch
+  });
+}
+
+async function deleteAddress(payload) {
+  const { id } = payload;
+  if (!id) return fail('缺少地址 ID', 'ADDRESS_ID_REQUIRED');
+  const user = await requireCurrentCloudUser();
+  const addressRes = await db.collection('addresses').where({ id, userId: user.id }).limit(1).get();
+  const address = addressRes.data[0] || null;
+  if (!address) return fail('地址不存在', 'ADDRESS_NOT_FOUND');
+
+  await db.collection('addresses').doc(address._id).remove();
+
+  if (address.isDefault) {
+    const remainRes = await db.collection('addresses')
+      .where({ userId: user.id })
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get();
+    const nextDefault = remainRes.data[0] || null;
+    if (nextDefault) {
+      await db.collection('addresses').doc(nextDefault._id).update({
+        data: {
+          isDefault: true,
+          updatedAt: nowText()
+        }
+      });
+    }
+  }
+
+  return ok({ id, deleted: true });
+}
+
+async function setDefaultAddress(payload) {
+  const { id } = payload;
+  if (!id) return fail('缺少地址 ID', 'ADDRESS_ID_REQUIRED');
+  const user = await requireCurrentCloudUser();
+  const addressRes = await db.collection('addresses').where({ id, userId: user.id }).limit(1).get();
+  const address = addressRes.data[0] || null;
+  if (!address) return fail('地址不存在', 'ADDRESS_NOT_FOUND');
+
+  const allAddresses = await fetchAllCollection(
+    () => db.collection('addresses').where({ userId: user.id }),
+    {
+      pageSize: 100,
+      orderBy: 'createdAt',
+      orderDirection: 'desc'
+    }
+  );
+
+  for (const item of allAddresses) {
+    await db.collection('addresses').doc(item._id).update({
+      data: {
+        isDefault: item.id === id,
+        updatedAt: nowText()
+      }
+    });
+  }
+
+  return ok({
+    ...address,
+    isDefault: true,
+    updatedAt: nowText()
+  });
+}
+
 async function listAddresses(payload) {
   const currentUser = await requireCurrentCloudUser();
   const { userId } = payload;
@@ -1342,6 +1430,18 @@ exports.main = async (event) => {
 
     if (action === 'saveAddress') {
       return saveAddress(payload);
+    }
+
+    if (action === 'updateAddress') {
+      return updateAddress(payload);
+    }
+
+    if (action === 'deleteAddress') {
+      return deleteAddress(payload);
+    }
+
+    if (action === 'setDefaultAddress') {
+      return setDefaultAddress(payload);
     }
 
     if (action === 'listAddresses') {

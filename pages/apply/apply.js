@@ -6,6 +6,7 @@ Page({
     user: null,
     company: '',
     region: '',
+    regionParts: [],
     addressDetail: '',
     statusText: ''
   },
@@ -21,6 +22,7 @@ Page({
       user,
       company: user.company,
       region: user.region,
+      regionParts: splitRegion(user.region),
       addressDetail: user.addressDetail,
       statusText: map[user.customerStatus]
     });
@@ -30,8 +32,12 @@ Page({
     this.setData({ company: event.detail.value });
   },
 
-  onRegion(event) {
-    this.setData({ region: event.detail.value });
+  onRegionChange(event) {
+    const regionParts = event.detail.value || [];
+    this.setData({
+      regionParts,
+      region: regionParts.join(' ')
+    });
   },
 
   onDetail(event) {
@@ -76,3 +82,8 @@ Page({
     });
   }
 });
+
+function splitRegion(regionText) {
+  if (!regionText) return [];
+  return String(regionText).split(/\s+/).filter(Boolean).slice(0, 3);
+}

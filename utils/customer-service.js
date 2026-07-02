@@ -75,6 +75,66 @@ function saveAddress(form) {
   return cloudFirst('saveAddress', { form }, () => saveAddressMock(form));
 }
 
+function updateAddressMock({ id, form }) {
+  const user = getCurrentUser();
+  if (!user) throw new Error('请先登录');
+  let updated = null;
+  updateStore((store) => {
+    const address = store.addresses.find((item) => item.id === id && item.userId === user.id);
+    if (!address) throw new Error('地址不存在');
+    Object.assign(address, form, { updatedAt: nowText() });
+    updated = { ...address };
+  });
+  return updated;
+}
+
+function updateAddress({ id, form }) {
+  return cloudFirst('updateAddress', { id, form }, () => updateAddressMock({ id, form }));
+}
+
+function deleteAddressMock(id) {
+  const user = getCurrentUser();
+  if (!user) throw new Error('请先登录');
+  updateStore((store) => {
+    const index = store.addresses.findIndex((item) => item.id === id && item.userId === user.id);
+    if (index < 0) throw new Error('地址不存在');
+    const removed = store.addresses[index];
+    store.addresses.splice(index, 1);
+    if (removed.isDefault) {
+      const nextDefault = store.addresses.filter((item) => item.userId === user.id)[0];
+      if (nextDefault) {
+        nextDefault.isDefault = true;
+        nextDefault.updatedAt = nowText();
+      }
+    }
+  });
+  return { id, deleted: true };
+}
+
+function deleteAddress(id) {
+  return cloudFirst('deleteAddress', { id }, () => deleteAddressMock(id));
+}
+
+function setDefaultAddressMock(id) {
+  const user = getCurrentUser();
+  if (!user) throw new Error('请先登录');
+  let updated = null;
+  updateStore((store) => {
+    store.addresses.forEach((item) => {
+      if (item.userId !== user.id) return;
+      item.isDefault = item.id === id;
+      item.updatedAt = nowText();
+      if (item.id === id) updated = { ...item };
+    });
+    if (!updated) throw new Error('地址不存在');
+  });
+  return updated;
+}
+
+function setDefaultAddress(id) {
+  return cloudFirst('setDefaultAddress', { id }, () => setDefaultAddressMock(id));
+}
+
 function fetchAddressesByCurrentUser() {
   const user = getCurrentUser();
   if (!user) return Promise.resolve([]);
@@ -175,14 +235,17 @@ function fetchCustomerLogsPage(id, logsPage = 1, logsPageSize = 20) {
 }
 
 module.exports = {
+  deleteAddress,
   fetchAddressesByCurrentUser,
   fetchCustomerDetail,
   fetchCustomerLogsPage,
   fetchCustomers,
   reviewCustomer,
   saveAddress,
+  setDefaultAddress,
   statusMap,
-  submitApply
+  submitApply,
+  updateAddress
 };
 
 function normalizeCustomerPageResult(result) {

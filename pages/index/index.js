@@ -1,6 +1,7 @@
 const { canSeePrice, goLoginOrApply, refreshCurrentUser } = require('../../utils/auth');
 const { fetchCategories, fetchHomeContent, fetchVisibleProducts } = require('../../utils/catalog-service');
 const { selectProducts } = require('../../utils/content');
+const { APP_NAME } = require('../../utils/config');
 
 Page({
   data: {
@@ -67,5 +68,23 @@ Page({
       },
       fail: () => wx.showToast({ title: '扫码未完成', icon: 'none' })
     });
+  },
+
+  onShareAppMessage() {
+    const imageUrl = this.data.home.heroImage || this.data.home.logoImage || '';
+    return {
+      title: `${APP_NAME}，火锅串串食材选购平台`,
+      path: '/pages/index/index',
+      imageUrl
+    };
+  },
+
+  onShareTimeline() {
+    const imageUrl = this.data.home.heroImage || this.data.home.logoImage || '';
+    return {
+      title: `${APP_NAME}，火锅串串食材选购平台`,
+      query: '',
+      imageUrl
+    };
   }
 });

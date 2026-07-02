@@ -11,6 +11,7 @@
     "pages/login/login",
     "pages/apply/apply",
     "pages/address/address",
+    "pages/address-edit/address-edit",
     "pages/agreement/agreement",
     "pages/agreement-detail/agreement-detail",
     "pages/message-settings/message-settings",
@@ -62,4 +63,3 @@
   "style": "v2",
   "lazyCodeLoading": "requiredComponents"
 }
-

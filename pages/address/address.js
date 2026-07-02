@@ -1,16 +1,10 @@
 const { leaveRestrictedPageAfterLoginCancel, requireLogin } = require('../../utils/auth');
-const { saveAddress, fetchAddressesByCurrentUser } = require('../../utils/customer-service');
+const { deleteAddress, setDefaultAddress, fetchAddressesByCurrentUser } = require('../../utils/customer-service');
 
 Page({
   data: {
     mode: '',
-    addresses: [],
-    form: {
-      contactName: '',
-      phone: '',
-      region: '',
-      detail: ''
-    }
+    addresses: []
   },
 
   onLoad(options) {
@@ -33,32 +27,58 @@ Page({
     });
   },
 
-  onInput(event) {
-    this.setData({ [`form.${event.currentTarget.dataset.key}`]: event.detail.value });
-  },
-
-  save() {
-    const form = this.data.form;
-    if (!form.contactName || !form.phone || !form.region || !form.detail) {
-      wx.showToast({ title: '请填写完整地址', icon: 'none' });
-      return;
-    }
-    saveAddress(form).then(() => {
-      this.setData({ form: { contactName: '', phone: '', region: '', detail: '' } });
-      this.refresh();
-      wx.showToast({ title: '已保存' });
-    }).catch((error) => {
-      wx.showToast({
-        title: error && error.message ? error.message : '保存失败，请稍后再试',
-        icon: 'none'
-      });
-    });
-  },
-
   choose(event) {
     if (this.data.mode === 'choose') {
       wx.setStorageSync('zht_checkout_address_id', event.currentTarget.dataset.id);
       wx.navigateBack();
     }
+  },
+
+  editAddress(event) {
+    const id = event.currentTarget.dataset.id;
+    wx.navigateTo({ url: `/pages/address-edit/address-edit?id=${encodeURIComponent(id)}` });
+  },
+
+  removeAddress(event) {
+    const id = event.currentTarget.dataset.id;
+    wx.showModal({
+      title: '删除地址',
+      content: '确定删除这条地址吗？',
+      confirmText: '删除',
+      success: (res) => {
+        if (!res.confirm) return;
+        deleteAddress(id).then(() => {
+          if (this.data.editingId === id) {
+            this.resetForm();
+          }
+          this.refresh();
+          wx.showToast({ title: '已删除' });
+        }).catch((error) => {
+          wx.showToast({
+            title: error && error.message ? error.message : '删除失败',
+            icon: 'none'
+          });
+        });
+      }
+    });
+  },
+
+  markDefault(event) {
+    const id = event.currentTarget.dataset.id;
+    const address = this.data.addresses.find((item) => item.id === id);
+    if (!address || address.isDefault) return;
+    setDefaultAddress(id).then(() => {
+      this.refresh();
+      wx.showToast({ title: '已设为默认' });
+    }).catch((error) => {
+      wx.showToast({
+        title: error && error.message ? error.message : '设置失败',
+        icon: 'none'
+      });
+    });
+  },
+
+  openCreate() {
+    wx.navigateTo({ url: '/pages/address-edit/address-edit' });
   }
 });
